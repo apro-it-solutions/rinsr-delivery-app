@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:rinsr_delivery_partner/core/theme/app_colors.dart';
 import 'enums.dart';
 
-enum DeliveryAgentStatus { pickup, transit, delivered, cancelled, unknown }
+enum DeliveryAgentStatus {
+  accepted,
+  pickup,
+  transit,
+  delivered,
+  cancelled,
+  unknown,
+}
 
 extension DeliveryAgentStatusExtension on DeliveryAgentStatus {
   String get label {
     switch (this) {
+      case DeliveryAgentStatus.accepted:
+        return 'Accepted';
       case DeliveryAgentStatus.pickup:
         return 'Pickup';
       case DeliveryAgentStatus.transit:
@@ -22,6 +31,7 @@ extension DeliveryAgentStatusExtension on DeliveryAgentStatus {
 
   Color get color {
     switch (this) {
+      case DeliveryAgentStatus.accepted:
       case DeliveryAgentStatus.pickup:
       case DeliveryAgentStatus.transit:
         return AppColors.primary;
@@ -42,8 +52,11 @@ extension DeliveryAgentStatusExtension on DeliveryAgentStatus {
 extension OrderStatusExtension on OrderStatus {
   DeliveryAgentStatus get agentStatus {
     switch (this) {
-      // PICKUP PHASE
+      // PRE-PICKUP PHASE
       case OrderStatus.scheduled:
+        return DeliveryAgentStatus.accepted;
+
+      // PICKUP PHASE
       // case OrderStatus.readyToPickupFromHub: // Removed from agent flow
       // case OrderStatus.serviceCompleted: // Removed from agent flow
       case OrderStatus.ready: // Ready to pickup from hub (for delivery)

@@ -36,7 +36,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
                 order.pickedUpDeliveryPartnerId == null &&
                 order.orderReturnedDeliveryPartner == null;
             final isPickedByMe =
-                order.deliveryUpdates?.currentDeliveryPartnerId == event.agentId ;
+                order.deliveryUpdates?.currentDeliveryPartnerId ==
+                event.agentId;
             return isUnassigned || isPickedByMe;
           }).toList() ??
           [];
@@ -68,12 +69,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
               return 0;
             case DeliveryAgentStatus.pickup:
               return 1;
-            case DeliveryAgentStatus.delivered:
+            case DeliveryAgentStatus.accepted:
               return 2;
-            case DeliveryAgentStatus.cancelled:
+            case DeliveryAgentStatus.delivered:
               return 3;
-            case DeliveryAgentStatus.unknown:
+            case DeliveryAgentStatus.cancelled:
               return 4;
+            case DeliveryAgentStatus.unknown:
+              return 5;
           }
         }
 

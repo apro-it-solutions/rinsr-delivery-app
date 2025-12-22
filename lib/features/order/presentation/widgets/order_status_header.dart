@@ -54,20 +54,23 @@ class OrderStatusHeader extends StatelessWidget {
                 const Spacer(flex: 1),
                 Expanded(
                   flex: 2,
-                  child: Container(
-                    height: 2,
-                    color: currentStep > 0
-                        ? AppColors.primary
-                        : Colors.grey.shade200,
+                  child: _buildConnector(
+                    isCompleted: currentStep > 0,
+                    isActive: currentStep == 0,
                   ),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Container(
-                    height: 2,
-                    color: currentStep > 1
-                        ? AppColors.primary
-                        : Colors.grey.shade200,
+                  child: _buildConnector(
+                    isCompleted: currentStep > 1,
+                    isActive: currentStep == 1,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: _buildConnector(
+                    isCompleted: currentStep > 2,
+                    isActive: currentStep == 2,
                   ),
                 ),
                 const Spacer(flex: 1),
@@ -80,18 +83,24 @@ class OrderStatusHeader extends StatelessWidget {
               _buildStepItem(
                 context,
                 0,
-                DeliveryAgentStatus.pickup.label,
+                DeliveryAgentStatus.accepted.label,
                 currentStep,
               ),
               _buildStepItem(
                 context,
                 1,
-                DeliveryAgentStatus.transit.label,
+                DeliveryAgentStatus.pickup.label,
                 currentStep,
               ),
               _buildStepItem(
                 context,
                 2,
+                DeliveryAgentStatus.transit.label,
+                currentStep,
+              ),
+              _buildStepItem(
+                context,
+                3,
                 DeliveryAgentStatus.delivered.label,
                 currentStep,
               ),
@@ -99,6 +108,23 @@ class OrderStatusHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildConnector({required bool isCompleted, required bool isActive}) {
+    return Stack(
+      children: [
+        // Background line
+        Container(height: 2, color: Colors.grey.shade200),
+        // Foreground line (progress)
+        if (isCompleted || isActive)
+          FractionallySizedBox(
+            widthFactor: isCompleted
+                ? 1.0
+                : 0.5, // 100% if completed, 50% if active (partial)
+            child: Container(height: 2, color: AppColors.primary),
+          ),
+      ],
     );
   }
 

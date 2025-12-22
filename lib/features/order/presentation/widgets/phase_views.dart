@@ -106,7 +106,6 @@ class _PhaseAViewState extends State<PhaseAView> {
       } else if (_currentStep == 1) {
         return OrderPickupForm(
           onSubmitted: () {
-            print('>>>>>>>>>>>>>>>>>.');
             // Bypass QR Scan step
             // setState(() => _currentStep = 2);
             context.read<OrderBloc>().add(ScanQrCode());

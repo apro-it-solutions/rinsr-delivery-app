@@ -337,7 +337,7 @@ class _OrderListItemState extends State<OrderListItem> {
                                           ),
                                         ),
                                       ),
-                                      child: Text(
+                                      child: const Text(
                                         'Skip',
                                         style: TextStyle(
                                           fontWeight: FontWeight.w600,
@@ -436,6 +436,7 @@ class _OrderListItemState extends State<OrderListItem> {
         break;
       case DeliveryAgentStatus.pickup:
       case DeliveryAgentStatus.transit:
+      case DeliveryAgentStatus.accepted:
         backgroundColor = AppColors.primary.withValues(alpha: 0.1);
         textColor = AppColors.primary;
         break;
