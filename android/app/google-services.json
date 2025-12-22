@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "1045594865170",
+    "project_id": "rinsrdev-845c2",
+    "storage_bucket": "rinsrdev-845c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1045594865170:android:eca72cfd88867abebb62cb",
+        "android_client_info": {
+          "package_name": "com.rinsr.client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCICZZAFJa5w93j6ZBXwReIGyAQjPOencc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1045594865170:android:8f4af4333a96dde7bb62cb",
+        "android_client_info": {
+          "package_name": "com.rinsr.delivery"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCICZZAFJa5w93j6ZBXwReIGyAQjPOencc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1045594865170:android:76d1afeb3fb159debb62cb",
+        "android_client_info": {
+          "package_name": "com.rinsr.vendor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCICZZAFJa5w93j6ZBXwReIGyAQjPOencc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

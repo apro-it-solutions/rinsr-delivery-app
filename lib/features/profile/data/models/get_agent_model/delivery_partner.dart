@@ -1,0 +1,94 @@
+import 'package:json_annotation/json_annotation.dart';
+
+import '../../../../auth/domain/entities/verify_user/verify_user_response_entity.dart';
+
+part 'delivery_partner.g.dart';
+
+@JsonSerializable()
+class DeliveryPartner extends DeliveryPartnerEntity {
+  @override
+  @JsonKey(name: '_id')
+  final String? id;
+  @override
+  @JsonKey(name: 'company_name')
+  final String? companyName;
+  @override
+  final String? location;
+  @override
+  @JsonKey(name: 'phone_number')
+  final String? phoneNumber;
+  @JsonKey(name: 'device_token')
+  final String? deviceToken;
+  @override
+  final List<String>? services;
+  @override
+  @JsonKey(name: 'is_active')
+  final bool? isActive;
+  @override
+  @JsonKey(name: 'total_completed_orders')
+  final int? totalCompletedOrders;
+  @override
+  final DateTime? createdAt;
+  @override
+  final DateTime? updatedAt;
+  @JsonKey(name: '__v')
+  final int? v;
+
+  const DeliveryPartner({
+    this.id,
+    this.companyName,
+    this.location,
+    this.phoneNumber,
+    this.deviceToken,
+    this.services,
+    this.isActive,
+    this.totalCompletedOrders,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+  }) : super(
+         id: id,
+         companyName: companyName,
+         location: location,
+         phoneNumber: phoneNumber,
+         services: services,
+         isActive: isActive,
+         totalCompletedOrders: totalCompletedOrders,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
+
+  factory DeliveryPartner.fromJson(Map<String, dynamic> json) {
+    return _$DeliveryPartnerFromJson(json);
+  }
+
+  Map<String, dynamic> toJson() => _$DeliveryPartnerToJson(this);
+
+  DeliveryPartner copyWith({
+    String? id,
+    String? companyName,
+    String? location,
+    String? phoneNumber,
+    String? deviceToken,
+    List<String>? services,
+    bool? isActive,
+    int? totalCompletedOrders,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? v,
+  }) {
+    return DeliveryPartner(
+      id: id ?? this.id,
+      companyName: companyName ?? this.companyName,
+      location: location ?? this.location,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      deviceToken: deviceToken ?? this.deviceToken,
+      services: services ?? this.services,
+      isActive: isActive ?? this.isActive,
+      totalCompletedOrders: totalCompletedOrders ?? this.totalCompletedOrders,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      v: v ?? this.v,
+    );
+  }
+}

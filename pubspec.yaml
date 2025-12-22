@@ -1,0 +1,58 @@
+name: rinsr_delivery_partner
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  dio: ^5.9.0
+  json_annotation: ^4.9.0
+  equatable: ^2.0.7
+  connectivity_plus: ^7.0.0
+  dartz: ^0.10.1
+  get_it: ^8.2.0
+  bloc: ^9.0.1
+  flutter_bloc: ^9.1.1
+  flutter_svg: ^2.2.1
+  shared_preferences: ^2.5.3
+  intl: ^0.20.2
+  pin_code_fields: ^8.0.1
+  google_fonts: ^6.3.2
+  firebase_core: ^4.2.1
+  firebase_messaging: ^16.0.4
+  flutter_launcher_icons: ^0.14.4
+  mocktail: ^1.0.4
+  change_app_package_name: ^1.5.0
+  url_launcher: ^6.3.2
+  image_picker: ^1.2.1
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  json_serializable: ^6.11.1
+  build_runner: ^2.7.1
+  bloc_test: ^10.0.0
+
+  flutter_lints: ^5.0.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
