@@ -44,19 +44,23 @@ extension OrderStatusExtension on OrderStatus {
     switch (this) {
       // PICKUP PHASE
       case OrderStatus.scheduled:
-      case OrderStatus.readyToPickupFromHub:
-      case OrderStatus.serviceCompleted: // Ready to pickup from vendor
+      // case OrderStatus.readyToPickupFromHub: // Removed from agent flow
+      // case OrderStatus.serviceCompleted: // Removed from agent flow
       case OrderStatus.ready: // Ready to pickup from hub (for delivery)
         return DeliveryAgentStatus.pickup;
 
       // TRANSIT PHASE
       case OrderStatus.pickedUp:
-      case OrderStatus.vendorPickedUp:
-      case OrderStatus.vendorReturning:
+      // case OrderStatus.vendorPickedUp: // Removed from agent flow
+      // case OrderStatus.vendorReturning: // Removed from agent flow
       case OrderStatus.outForDelivery:
         return DeliveryAgentStatus.transit;
 
-      // DELIVERED PHASE
+      // DELIVERED/PROCESSING PHASE
+      case OrderStatus.readyToPickupFromHub:
+      case OrderStatus.serviceCompleted:
+      case OrderStatus.vendorPickedUp:
+      case OrderStatus.vendorReturning:
       case OrderStatus.processing:
       case OrderStatus.washing:
       case OrderStatus.delivered:

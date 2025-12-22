@@ -64,17 +64,17 @@ class _OrderListItemState extends State<OrderListItem> {
       case OrderStatus.pickedUp:
         return order.hubAddress; // Deliver to Hub
 
-      // Phase B: Hub -> Vendor
-      case OrderStatus.readyToPickupFromHub:
-        return order.hubAddress; // Pickup from Hub
-      case OrderStatus.vendorPickedUp:
-        return order.vendorAddress; // Deliver to Vendor
+      // Phase B: Hub -> Vendor (Removed)
+      // case OrderStatus.readyToPickupFromHub:
+      //   return order.hubAddress; // Pickup from Hub
+      // case OrderStatus.vendorPickedUp:
+      //   return order.vendorAddress; // Deliver to Vendor
 
-      // Phase C: Vendor -> Hub
-      case OrderStatus.serviceCompleted:
-        return order.vendorAddress; // Pickup from Vendor
-      case OrderStatus.vendorReturning:
-        return order.hubAddress; // Deliver to Hub
+      // Phase C: Vendor -> Hub (Removed)
+      // case OrderStatus.serviceCompleted:
+      //   return order.vendorAddress; // Pickup from Vendor
+      // case OrderStatus.vendorReturning:
+      //   return order.hubAddress; // Deliver to Hub
 
       // Phase D: Hub -> User
       case OrderStatus.ready:
