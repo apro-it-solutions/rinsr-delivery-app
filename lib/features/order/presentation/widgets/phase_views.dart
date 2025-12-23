@@ -484,6 +484,9 @@ class _PhaseDViewState extends State<PhaseDView> {
               buttonText: 'Arrived at Location',
               onButtonPressed: widget.isEnabled
                   ? () async {
+                      context.read<OrderBloc>().add(
+                        NotifyUserEvent(orderId: widget.order.orderId ?? ''),
+                      );
                       setState(() => _currentStep = 1);
                     }
                   : () {

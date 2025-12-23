@@ -1,17 +1,23 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:rinsr_delivery_partner/features/home/presentation/bloc/home_bloc.dart';
 
 import '../constants/api_urls.dart';
+import '../constants/constants.dart';
 import '../network/dio_config.dart';
-import '../theme/app_colors.dart';
 import '../utils/app_alerts.dart';
 import 'firebase_messaging_wrapper.dart';
+import 'shared_preferences_service.dart';
 
 class FCMService {
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   static FirebaseMessagingWrapper _messaging = FirebaseMessagingWrapper();
+  static final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   @visibleForTesting
   static set messagingWrapper(FirebaseMessagingWrapper wrapper) =>
@@ -19,31 +25,77 @@ class FCMService {
 
   static final Dio dio = DioConfig.createDio();
 
-  static final Map<String, BuildContext> _dialogContexts = {};
-  static final Set<String> _shownNotifications = {};
-
   static bool _isInitialized = false; // prevent duplicate listeners
 
   // ─────────────────────────────────────────────────────────────
   //  GLOBAL INITIALIZATION (CALL IN main.dart)
   // ─────────────────────────────────────────────────────────────
   static Future<void> initializeFCM({String? vendorId}) async {
-    if (_isInitialized) return; // avoid calling twice
-    _isInitialized = true;
+    try {
+      if (_isInitialized) return; // avoid calling twice
+      _isInitialized = true;
 
-    _messaging.onBackgroundMessage(_firebaseBackgroundHandler);
+      // Initialize Local Notifications for Android Foreground
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    await _requestPermission();
+      // Darwin is for iOS
+      const DarwinInitializationSettings initializationSettingsDarwin =
+          DarwinInitializationSettings();
 
-    if (vendorId != null) {
-      await _saveTokenToBackend(vendorId);
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsDarwin,
+          );
+
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (details) {
+          // Handle notification tap if needed
+          debugPrint('🔔 Notification Tapped: ${details.payload}');
+        },
+      );
+
+      // Create High Importance Channel for Android
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'high_importance_channel', // id
+        'High Importance Notifications', // title
+        description: 'This channel is used for important notifications.',
+        importance: Importance.max,
+      );
+
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(channel);
+
+      // Set iOS Foreground Options to show system notifications
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+
+      _messaging.onBackgroundMessage(_firebaseBackgroundHandler);
+
+      await _requestPermission();
+
+      if (vendorId != null) {
+        await _saveTokenToBackend(vendorId);
+      }
+
+      _listenForeground(channel);
+      _listenTerminated();
+      _listenBackground();
+
+      debugPrint('🔔 FCM Initialization Completed');
+    } catch (e, stackTrace) {
+      debugPrint('❌ FCM Initialization Error: $e');
+      debugPrintStack(stackTrace: stackTrace);
     }
-
-    _listenForeground();
-    _listenTerminated();
-    _listenBackground();
-
-    debugPrint('🔔 FCM Initialization Completed');
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -92,10 +144,7 @@ class FCMService {
 
     // Save token to backend
     try {
-      await dio.post(
-        ApiUrls.saveToken,
-        data: {'vendor_id': vendorId, 'device_token': token},
-      );
+      await dio.post(ApiUrls.saveToken, data: {'device_token': token});
       debugPrint('✅ Token saved to backend');
     } catch (e) {
       debugPrint('❌ Error saving token: $e');
@@ -109,10 +158,7 @@ class FCMService {
     _messaging.onTokenRefresh.listen((newToken) async {
       debugPrint('♻️ FCM Token Refreshed: $newToken');
       try {
-        await dio.post(
-          ApiUrls.saveToken,
-          data: {'vendor_id': vendorId, 'device_token': newToken},
-        );
+        await dio.post(ApiUrls.saveToken, data: {'device_token': newToken});
       } catch (e) {
         debugPrint('❌ Error saving refreshed token: $e');
       }
@@ -122,18 +168,43 @@ class FCMService {
   // ─────────────────────────────────────────────────────────────
   // FOREGROUND HANDLER
   // ─────────────────────────────────────────────────────────────
-  static void _listenForeground() {
+  static void _listenForeground(AndroidNotificationChannel channel) {
+    debugPrint('🎧 Setting up Foreground Listener...');
     _messaging.onMessage.listen((message) {
+      debugPrint('🔔 FOREGROUND MESSAGE RECEIVED VIA STREAM!');
+      debugPrint('Title: ${message.notification?.title}');
+      debugPrint('Body: ${message.notification?.body}');
+      debugPrint('Data: ${message.data}');
       final data = message.data;
       final type = data['type'];
-      final taskId = data['orderId'];
 
-      if (type == 'NEW_ORDER') {
-        _handleNewOrder(taskId, data);
+      debugPrint('🔔 Foreground Message Received: ${message.messageId}');
+
+      // Show system notification for foreground messages
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+
+      if (notification != null && android != null) {
+        _localNotifications.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              channel.id,
+              channel.name,
+              channelDescription: channel.description,
+              icon: android.smallIcon ?? '@mipmap/ic_launcher',
+              importance: Importance.max,
+              priority: Priority.high,
+            ),
+          ),
+        );
       }
 
-      if (type == 'ORDER_TAKEN') {
-        _handleOrderTaken(taskId);
+      // Logic Handling
+      if (type == 'NEW_ORDER_BROADCAST' || type == 'NEW_ORDER_PARTNER') {
+        _refreshOrdersList();
       }
     });
   }
@@ -146,190 +217,16 @@ class FCMService {
     }
   }
 
-  static void _handleNewOrder(String taskId, Map<String, dynamic> data) {
-    // avoid showing popup again for same order
-    if (_shownNotifications.contains(taskId)) return;
-
-    _refreshOrdersList();
-
-    final title = data['title'] ?? 'New Order';
-    final body = data['body'] ?? '';
-
-    _shownNotifications.add(taskId);
-    _showTaskAcceptancePopup(taskId: taskId, title: title, body: body);
-  }
-
-  static void _handleOrderTaken(String taskId) {
-    debugPrint('❌ Order taken by someone else: $taskId');
-
-    // Close popup for this specific task
-    if (_dialogContexts.containsKey(taskId)) {
-      final context = _dialogContexts[taskId];
-      if (context != null && Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-        debugPrint('Popup closed for $taskId');
-      }
-      // Cleanup
-      _dialogContexts.remove(taskId);
-    }
-
-    // Remove from shown notifications
-    _shownNotifications.remove(taskId);
-
-    // refresh UI (vendor list page)
-    _refreshOrdersList();
-  }
-
   // When app is in background & user taps notification
   static void _listenBackground() {
     _messaging.onMessageOpenedApp.listen((message) {
+      print('hello');
+      debugPrint('📥 App opened from BACKGROUND state via notification');
       final type = message.data['type'];
-      if (type == 'ORDER_TAKEN') {
+      if (type == 'NEW_ORDER_BROADCAST' || type == 'NEW_ORDER_PARTNER') {
         _refreshOrdersList();
       }
     });
-  }
-
-  static void _showTaskAcceptancePopup({
-    required String taskId,
-    required String title,
-    required String body,
-  }) {
-    final context = navigatorKey.currentContext;
-    debugPrint('taskId: $taskId');
-
-    if (context != null && context.mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext dialogContext) {
-          final theme = Theme.of(dialogContext);
-          final textTheme = theme.textTheme;
-          // Store the context with taskId as key
-          _dialogContexts[taskId] = dialogContext;
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 4,
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'New Order Arrived',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primaryBorderColor),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          body,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: AppColors.greyText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop();
-                          // Cleanup
-                          _dialogContexts.remove(taskId);
-                          _shownNotifications.remove(taskId);
-                          // context.read<HomeBloc>().add(GetOrderEvent());
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: const BorderSide(color: AppColors.redColor),
-                          ),
-                        ),
-                        child: Text(
-                          'Ignore',
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: AppColors.redColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop();
-                          _dialogContexts.remove(taskId);
-                          _shownNotifications.remove(taskId);
-                          // final agentId = SharedPreferencesService.getString(
-                          //   AppConstants.kAgentId,
-                          // );
-                          // final request = AcceptOrderRequestEntity(
-                          //   vendorStatus: VendorStatus.accepted.name,
-                          //   orderId: taskId,
-                          //   vendorId: vendorId,
-                          // );
-                          // dialogContext.read<HomeBloc>().add(
-                          //   AcceptOrderEvent(request),
-                          // );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'Accept',
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    }
   }
 
   @pragma('vm:entry-point')
@@ -340,7 +237,10 @@ class FCMService {
   static void _refreshOrdersList() {
     final context = navigatorKey.currentContext;
     if (context != null) {
-      // context.read<HomeBloc>().add(GetOrderEvent());
+      final String? deliveryAgentId = SharedPreferencesService.getString(
+        AppConstants.kAgentId,
+      );
+      context.read<HomeBloc>().add(GetOrdersEvent(agentId: deliveryAgentId));
     }
   }
 }
