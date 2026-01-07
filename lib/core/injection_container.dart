@@ -16,6 +16,7 @@ import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/auth/presentation/bloc/auth_external_services.dart';
 import '../features/home/data/data_sources/home_remote_data_source.dart';
 import '../features/home/domain/repositories/home_repository.dart';
+import '../features/home/presentation/bloc/home_bloc.dart'; // Import added
 import '../features/order/data/data_sources/order_remote_data_source.dart';
 import '../features/order/data/repositories/order_repositories_impl.dart';
 import '../features/order/domain/repositories/order_repository.dart';
@@ -58,7 +59,7 @@ Future<void> init() async {
   );
 
   //! ---------------------------
-  //! Features: Example Feature
+  //! Features
   //! ---------------------------
 
   // Use Cases
@@ -106,11 +107,15 @@ Future<void> init() async {
   );
 
   //! BLoCs
+  // HomeBloc MUST be a lazySingleton so that FCMService and UI share the same instance
+  sl.registerLazySingleton(
+    () => HomeBloc(
+      getOrders: sl(),
+      acceptOrder: sl(),
+    ),
+  );
+
   sl.registerFactory(
     () => OrderBloc(updateOrder: sl(), notifyUser: sl(), locationService: sl()),
   );
-
-  //! ---------------------------
-  //! Add other features here
-  //! ---------------------------
 }

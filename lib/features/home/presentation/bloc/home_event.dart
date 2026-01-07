@@ -13,11 +13,11 @@ final class GetOrdersEvent extends HomeEvent {
 }
 
 final class FilterOrdersEvent extends HomeEvent {
-  final DeliveryAgentStatus? filter;
-  const FilterOrdersEvent(this.filter);
+  final DeliveryAgentStatus filter;
+  const FilterOrdersEvent({required this.filter});
 
   @override
-  List<Object> get props => [filter ?? ''];
+  List<Object> get props => [filter];
 }
 
 final class AcceptOrderEvent extends HomeEvent {

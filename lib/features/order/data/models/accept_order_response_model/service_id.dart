@@ -1,16 +1,23 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../../../../home/domain/entities/get_orders_entity.dart';
 
 part 'service_id.g.dart';
 
 @JsonSerializable()
-class ServiceId {
+class ServiceId extends ServiceIdEntity {
+  @override
   @JsonKey(name: '_id')
   final String? id;
+  @override
   final String? name;
+  @override
   final DateTime? createdAt;
+  @override
   final DateTime? updatedAt;
+  @override
   @JsonKey(name: '__v')
   final int? v;
+  @override
   final int? price;
 
   const ServiceId({
@@ -20,7 +27,14 @@ class ServiceId {
     this.updatedAt,
     this.v,
     this.price,
-  });
+  }) : super(
+         id: id,
+         name: name,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         v: v,
+         price: price,
+       );
 
   factory ServiceId.fromJson(Map<String, dynamic> json) {
     return _$ServiceIdFromJson(json);

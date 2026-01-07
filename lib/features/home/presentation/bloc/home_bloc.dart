@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:rinsr_delivery_partner/core/usecases/usecase.dart';
 import 'package:rinsr_delivery_partner/features/home/domain/usecases/get_orders.dart';
+import 'package:rinsr_delivery_partner/features/order/domain/entities/accept_order_response_entity.dart';
 
 import '../../../../core/constants/status_extensions.dart';
 import '../../../order/domain/entities/accept_order_params.dart';
@@ -97,7 +98,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         HomeLoaded(
           allOrders: userOrders,
           filteredOrders: userOrders,
-          selectedFilter: null,
+          selectedFilter: DeliveryAgentStatus.accepted,
           agentId: event.agentId,
         ),
       );
@@ -112,27 +113,22 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final currentState = state as HomeLoaded;
       final filter = event.filter;
 
-      final filtered = filter == null
-          ? currentState.allOrders
-                .where((element) => element.vendorStatus != 'pending')
-                .toList()
-          : currentState.allOrders.where((order) {
-              // Basic filter matching
-              final matchesStatus =
-                  order.computedStatus.agentStatus == filter &&
-                  order.vendorStatus != 'pending';
+      final filtered = currentState.allOrders.where((order) {
+        // Basic filter matching
+        final matchesStatus =
+            order.computedStatus.agentStatus == filter &&
+            order.vendorStatus != 'pending';
 
-              // Strict check for Delivered/Transit orders: must be assigned to THIS agent via deliveryUpdates
-              if ((filter == DeliveryAgentStatus.delivered ||
-                      filter == DeliveryAgentStatus.transit) &&
-                  matchesStatus) {
-                return order.deliveryUpdates?.currentDeliveryPartnerId ==
-                    currentState.agentId;
-              }
+        // Strict check for Delivered/Transit orders: must be assigned to THIS agent via deliveryUpdates
+        if ((filter == DeliveryAgentStatus.delivered ||
+                filter == DeliveryAgentStatus.transit) &&
+            matchesStatus) {
+          return order.deliveryUpdates?.currentDeliveryPartnerId ==
+              currentState.agentId;
+        }
 
-              return matchesStatus;
-            }).toList();
-
+        return matchesStatus;
+      }).toList();
       emit(
         HomeLoaded(
           allOrders: currentState.allOrders,
@@ -154,6 +150,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       emit(HomeLoading());
       final result = await acceptOrder(event.params);
       result.fold((l) => emit(HomeError(message: l.message)), (r) {
+        emit(HomeAcceptOrder(order: r));
         emit(
           HomeLoaded(
             allOrders: currentState.allOrders,

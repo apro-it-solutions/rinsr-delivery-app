@@ -1,17 +1,18 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:rinsr_delivery_partner/features/home/presentation/bloc/home_bloc.dart';
+import 'package:rinsr_delivery_partner/core/injection_container.dart'; // Import sl locator
 
 import '../constants/api_urls.dart';
 import '../constants/constants.dart';
 import '../network/dio_config.dart';
-import '../utils/app_alerts.dart';
 import 'firebase_messaging_wrapper.dart';
 import 'shared_preferences_service.dart';
 
+@pragma('vm:entry-point')
 class FCMService {
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,21 +26,25 @@ class FCMService {
 
   static final Dio dio = DioConfig.createDio();
 
-  static bool _isInitialized = false; // prevent duplicate listeners
+  static final StreamController<Map<String, dynamic>> _orderStreamController =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get orderStream =>
+      _orderStreamController.stream;
+
+  static bool _isInitialized = false;
 
   // ─────────────────────────────────────────────────────────────
   //  GLOBAL INITIALIZATION (CALL IN main.dart)
   // ─────────────────────────────────────────────────────────────
   static Future<void> initializeFCM({String? vendorId}) async {
     try {
-      if (_isInitialized) return; // avoid calling twice
+      if (_isInitialized) return;
       _isInitialized = true;
 
-      // Initialize Local Notifications for Android Foreground
+      // Local Notification Settings
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      // Darwin is for iOS
       const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings();
 
@@ -52,15 +57,15 @@ class FCMService {
       await _localNotifications.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (details) {
-          // Handle notification tap if needed
           debugPrint('🔔 Notification Tapped: ${details.payload}');
+          _refreshOrdersList();
         },
       );
 
-      // Create High Importance Channel for Android
+      // Create Notification Channel for Android
       const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'high_importance_channel', // id
-        'High Importance Notifications', // title
+        'high_importance_channel',
+        'High Importance Notifications',
         description: 'This channel is used for important notifications.',
         importance: Importance.max,
       );
@@ -71,7 +76,7 @@ class FCMService {
           >()
           ?.createNotificationChannel(channel);
 
-      // Set iOS Foreground Options to show system notifications
+      // Foreground display options
       await FirebaseMessaging.instance
           .setForegroundNotificationPresentationOptions(
             alert: true,
@@ -92,39 +97,24 @@ class FCMService {
       _listenBackground();
 
       debugPrint('🔔 FCM Initialization Completed');
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('❌ FCM Initialization Error: $e');
-      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  VENDOR REGISTRATION (CALL AFTER LOGIN)
-  // ─────────────────────────────────────────────────────────────
   static Future<void> registerVendor(String vendorId) async {
     await _saveTokenToBackend(vendorId);
   }
 
-  // Request permissions
   static Future<void> _requestPermission() async {
-    NotificationSettings settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    debugPrint('Notification Permission: ${settings.authorizationStatus}');
+    await _messaging.requestPermission(alert: true, badge: true, sound: true);
   }
 
-  // Save token to backend
   static Future<void> _saveTokenToBackend(String vendorId) async {
     String? token;
-
-    // Retry FCM token 5 times (best for Redmi / Oppo)
     for (int i = 0; i < 5; i++) {
       try {
         token = await _messaging.getToken();
-
         if (token != null) {
           debugPrint('📨 FCM Token received: $token');
           break;
@@ -132,55 +122,30 @@ class FCMService {
       } catch (e) {
         debugPrint('❌ FCM TOKEN ERROR (attempt $i): $e');
       }
-
-      // Wait before retrying
       await Future.delayed(const Duration(seconds: 2));
     }
 
-    if (token == null) {
-      debugPrint('❌ FCM TOKEN FAILED AFTER RETRIES');
-      return; // prevent crash
-    }
+    if (token == null) return;
 
-    // Save token to backend
     try {
       await dio.post(ApiUrls.saveToken, data: {'device_token': token});
       debugPrint('✅ Token saved to backend');
     } catch (e) {
       debugPrint('❌ Error saving token: $e');
-      AppAlerts.showErrorSnackBar(
-        context: navigatorKey.currentContext!,
-        message: e.toString(),
-      );
     }
-
-    // Token refresh listener
-    _messaging.onTokenRefresh.listen((newToken) async {
-      debugPrint('♻️ FCM Token Refreshed: $newToken');
-      try {
-        await dio.post(ApiUrls.saveToken, data: {'device_token': newToken});
-      } catch (e) {
-        debugPrint('❌ Error saving refreshed token: $e');
-      }
-    });
   }
 
   // ─────────────────────────────────────────────────────────────
-  // FOREGROUND HANDLER
+  // FOREGROUND HANDLER (Triggers the Popup)
   // ─────────────────────────────────────────────────────────────
   static void _listenForeground(AndroidNotificationChannel channel) {
-    debugPrint('🎧 Setting up Foreground Listener...');
     _messaging.onMessage.listen((message) {
-      debugPrint('🔔 FOREGROUND MESSAGE RECEIVED VIA STREAM!');
-      debugPrint('Title: ${message.notification?.title}');
-      debugPrint('Body: ${message.notification?.body}');
-      debugPrint('Data: ${message.data}');
+      debugPrint('🔔 Foreground Message Received: ${message.messageId}');
+
       final data = message.data;
       final type = data['type'];
 
-      debugPrint('🔔 Foreground Message Received: ${message.messageId}');
-
-      // Show system notification for foreground messages
+      // 1. Show standard notification alert
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification?.android;
 
@@ -201,31 +166,25 @@ class FCMService {
           ),
         );
       }
-
-      // Logic Handling
-      if (type == 'NEW_ORDER_BROADCAST' || type == 'NEW_ORDER_PARTNER') {
+      // 2. Refresh Logic: If the type matches an order event, trigger refresh
+      if (type == 'NEW_ORDER_BROADCAST' ||
+          type == 'NEW_ORDER_PARTNER' ||
+          type == 'ORDER_CREATED') {
         _refreshOrdersList();
+        _orderStreamController.add(data);
       }
     });
   }
 
-  // When app is terminated
   static void _listenTerminated() async {
     RemoteMessage? message = await _messaging.getInitialMessage();
-    if (message != null) {
-      debugPrint('📥 App opened from TERMINATED state via notification');
-    }
+    if (message != null) _refreshOrdersList();
   }
 
-  // When app is in background & user taps notification
   static void _listenBackground() {
     _messaging.onMessageOpenedApp.listen((message) {
-      print('hello');
-      debugPrint('📥 App opened from BACKGROUND state via notification');
-      final type = message.data['type'];
-      if (type == 'NEW_ORDER_BROADCAST' || type == 'NEW_ORDER_PARTNER') {
-        _refreshOrdersList();
-      }
+      debugPrint('📥 App opened from Background');
+      _refreshOrdersList();
     });
   }
 
@@ -234,13 +193,24 @@ class FCMService {
     debugPrint('Background message: ${message.messageId}');
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // REFRESH LOGIC (Communicates with Bloc)
+  // ─────────────────────────────────────────────────────────────
   static void _refreshOrdersList() {
-    final context = navigatorKey.currentContext;
-    if (context != null) {
+    try {
       final String? deliveryAgentId = SharedPreferencesService.getString(
         AppConstants.kAgentId,
       );
-      context.read<HomeBloc>().add(GetOrdersEvent(agentId: deliveryAgentId));
+
+      // Use Service Locator (sl) to find HomeBloc without needing Context
+      if (sl.isRegistered<HomeBloc>()) {
+        sl<HomeBloc>().add(GetOrdersEvent(agentId: deliveryAgentId));
+        debugPrint('✅ HomeBloc refresh triggered via sl');
+      } else {
+        debugPrint('⚠️ HomeBloc not registered in Locator');
+      }
+    } catch (e) {
+      debugPrint('❌ Refresh Logic Error: $e');
     }
   }
 }

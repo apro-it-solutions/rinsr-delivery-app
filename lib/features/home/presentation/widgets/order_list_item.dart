@@ -100,15 +100,12 @@ class _OrderListItemState extends State<OrderListItem> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 24,
-                offset: const Offset(0, 8),
+                offset: const Offset(0, 12),
               ),
             ],
-            border: Border.all(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              width: 1,
-            ),
+            border: Border.all(color: AppColors.lightBorderColor, width: 1),
           ),
           child: Material(
             color: Colors.transparent,

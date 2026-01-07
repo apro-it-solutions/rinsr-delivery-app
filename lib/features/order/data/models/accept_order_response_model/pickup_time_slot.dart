@@ -1,13 +1,21 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../../../../home/domain/entities/get_orders_entity.dart';
 
 part 'pickup_time_slot.g.dart';
 
 @JsonSerializable()
-class PickupTimeSlot {
+class PickupTimeSlot extends PickupTimeSlotEntity {
   final String? start;
   final String? end;
 
-  const PickupTimeSlot({this.start, this.end});
+  const PickupTimeSlot({this.start, this.end})
+    : super(startTime: start, endTime: end);
+
+  @override
+  String? get startTime => start;
+
+  @override
+  String? get endTime => end;
 
   factory PickupTimeSlot.fromJson(Map<String, dynamic> json) {
     return _$PickupTimeSlotFromJson(json);

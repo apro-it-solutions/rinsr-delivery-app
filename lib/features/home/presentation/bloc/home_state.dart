@@ -7,11 +7,9 @@ sealed class HomeState extends Equatable {
   List<Object> get props => [];
 }
 
+// Action states are for one-time UI events (like showing a dialog)
 sealed class HomeActionState extends HomeState {
   const HomeActionState();
-
-  @override
-  List<Object> get props => [];
 }
 
 final class HomeInitial extends HomeState {}
@@ -35,7 +33,24 @@ final class HomeLoaded extends HomeState {
   List<Object> get props => [allOrders, filteredOrders, selectedFilter ?? ''];
 }
 
+// NEW: This state triggers the full-screen "Uber-style" request
+final class NewOrderIncomingState extends HomeActionState {
+  final OrderDetailsEntity order;
+  const NewOrderIncomingState({required this.order});
+
+  @override
+  List<Object> get props => [order];
+}
+
 final class HomeError extends HomeState {
   final String message;
   const HomeError({required this.message});
+}
+
+final class HomeAcceptOrder extends HomeActionState {
+  final AcceptOrderResponseEntity order;
+  const HomeAcceptOrder({required this.order});
+
+  @override
+  List<Object> get props => [order];
 }

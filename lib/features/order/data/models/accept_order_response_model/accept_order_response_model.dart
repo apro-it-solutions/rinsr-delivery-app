@@ -11,10 +11,11 @@ class AcceptOrderResponseModel extends AcceptOrderResponseEntity {
   final bool? success;
   @override
   final String? message;
+  @override
   final Order? order;
 
   const AcceptOrderResponseModel({this.success, this.message, this.order})
-    : super(success: success, message: message);
+    : super(success: success, message: message, order: order);
 
   factory AcceptOrderResponseModel.fromJson(Map<String, dynamic> json) {
     return _$AcceptOrderResponseModelFromJson(json);

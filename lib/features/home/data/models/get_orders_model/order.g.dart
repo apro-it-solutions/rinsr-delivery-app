@@ -113,4 +113,6 @@ Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
   'photoPath': instance.photoPath,
   'cancel_reason': instance.cancelReason,
   'delivery_updates': instance.deliveryUpdates,
+  'picked_up_delivery_partner': instance.pickedUpDeliveryPartnerId,
+  'order_returned_delivery_partner': instance.orderReturnedDeliveryPartner,
 };

@@ -15,7 +15,7 @@ extension DeliveryAgentStatusExtension on DeliveryAgentStatus {
   String get label {
     switch (this) {
       case DeliveryAgentStatus.accepted:
-        return 'Accepted';
+        return 'Pending';
       case DeliveryAgentStatus.pickup:
         return 'Pickup';
       case DeliveryAgentStatus.transit:
