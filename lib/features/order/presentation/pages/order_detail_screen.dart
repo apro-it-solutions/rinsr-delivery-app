@@ -161,7 +161,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               locationWidget: locationWidget,
               distance: distanceInMeters,
             );
-          case OrderStatus.readyToPickupFromHub:
+          case OrderStatus.ready:
           case OrderStatus.vendorPickedUp:
           case OrderStatus.washing:
           case OrderStatus.serviceCompleted:
@@ -170,7 +170,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             return OrderCompletedView(order: order);
           case OrderStatus.outForDelivery:
           case OrderStatus.delivered:
-          case OrderStatus.ready:
+          case OrderStatus.readyToPickupFromHub:
             return PhaseDView(
               order: order,
               isEnabled: isEnabled,

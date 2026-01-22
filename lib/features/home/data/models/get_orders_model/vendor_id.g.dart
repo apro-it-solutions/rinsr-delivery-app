@@ -16,7 +16,7 @@ VendorId _$VendorIdFromJson(Map<String, dynamic> json) => VendorId(
       ?.map((e) => e as String)
       .toList(),
   services: (json['services'] as List<dynamic>?)
-      ?.map((e) => e as String)
+      ?.map((e) => VendorServiceModel.fromJson(e as Map<String, dynamic>))
       .toList(),
   isActive: json['is_active'] as bool?,
   createdAt: json['createdAt'] == null

@@ -58,42 +58,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         );
       }
 
-      // Sort: Active (Transit) orders first, then others
-      // Sort: Transit > Pickup > Delivered > Cancelled > Others
-      userOrders.sort((a, b) {
-        final aStatus = a.computedStatus.agentStatus;
-        final bStatus = b.computedStatus.agentStatus;
-
-        int getPriority(DeliveryAgentStatus status) {
-          switch (status) {
-            case DeliveryAgentStatus.transit:
-              return 0;
-            case DeliveryAgentStatus.pickup:
-              return 1;
-            case DeliveryAgentStatus.accepted:
-              return 2;
-            case DeliveryAgentStatus.delivered:
-              return 3;
-            case DeliveryAgentStatus.cancelled:
-              return 4;
-            case DeliveryAgentStatus.unknown:
-              return 5;
-          }
-        }
-
-        final priorityA = getPriority(aStatus);
-        final priorityB = getPriority(bStatus);
-
-        if (priorityA != priorityB) {
-          return priorityA.compareTo(priorityB);
-        }
-
-        // Secondary sort: creation time (newest first)
-        return (b.updatedAt ?? DateTime(2000)).compareTo(
-          a.updatedAt ?? DateTime(2000),
-        );
-      });
-
+      print('hello${userOrders.length}');
       emit(
         HomeLoaded(
           allOrders: userOrders,
@@ -115,9 +80,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       final filtered = currentState.allOrders.where((order) {
         // Basic filter matching
-        final matchesStatus =
-            order.computedStatus.agentStatus == filter &&
-            order.vendorStatus != 'pending';
+        final matchesStatus = order.computedStatus.agentStatus == filter;
 
         // Strict check for Delivered/Transit orders: must be assigned to THIS agent via deliveryUpdates
         if ((filter == DeliveryAgentStatus.delivered ||
@@ -126,7 +89,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           return order.deliveryUpdates?.currentDeliveryPartnerId ==
               currentState.agentId;
         }
-
         return matchesStatus;
       }).toList();
       emit(

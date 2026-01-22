@@ -502,7 +502,8 @@ class _SingleOrderViewState extends State<SingleOrderView> {
     // We treat 'transit' as the state where the agent has picked it up.
     // Confirm status logic from status_extensions.dart if needed, but usually agentStatus calls it transit.
     final isTransit =
-        widget.order.computedStatus.agentStatus == DeliveryAgentStatus.transit;
+        widget.order.computedStatus.agentStatus ==
+        DeliveryAgentStatus.delivered;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -538,7 +539,7 @@ class _SingleOrderViewState extends State<SingleOrderView> {
                     ),
                   ),
                   child: Text(
-                    'RESUME DELIVERY',
+                    'VIEW DETAILS',
                     style: AppTextStyles.mediumTextStyle(context).copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -590,13 +591,13 @@ class _SingleOrderViewState extends State<SingleOrderView> {
                             ),
                           ),
                         );
-                        if (context.read<HomeBloc>().state is! HomeError) {
-                          await Navigator.pushReplacementNamed(
-                            context,
-                            HomeRouter.orderDetail,
-                            arguments: widget.order,
-                          );
-                        }
+                        // if (context.read<HomeBloc>().state is! HomeError) {
+                        //   await Navigator.pushReplacementNamed(
+                        //     context,
+                        //     HomeRouter.orderDetail,
+                        //     arguments: widget.order,
+                        //   );
+                        // }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,

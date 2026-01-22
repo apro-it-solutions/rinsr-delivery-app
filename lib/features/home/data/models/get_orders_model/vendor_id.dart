@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../../domain/entities/get_orders_entity.dart';
+import 'vendor_service_model.dart';
 
 part 'vendor_id.g.dart';
 
@@ -24,7 +25,7 @@ class VendorId extends VendorDetailsEntity {
   @JsonKey(name: 'device_tokens')
   final List<String>? deviceTokens;
   @override
-  final List<String>? services;
+  final List<VendorServiceModel>? services;
   @override
   @JsonKey(name: 'is_active')
   final bool? isActive;
@@ -75,7 +76,7 @@ class VendorId extends VendorDetailsEntity {
     String? locationCoordinates,
     String? phoneNumber,
     List<String>? deviceTokens,
-    List<String>? services,
+    List<VendorServiceModel>? services,
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -96,3 +97,4 @@ class VendorId extends VendorDetailsEntity {
     );
   }
 }
+

@@ -443,7 +443,7 @@ class VendorDetailsEntity extends Equatable {
   final String? locationCoordinates;
   final String? phoneNumber;
   final List<String>? deviceTokens;
-  final List<String>? services;
+  final List<VendorServiceEntity>? services;
   final bool? isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -596,4 +596,14 @@ class PlanIdEntity extends Equatable {
     updatedAt,
     v,
   ];
+}
+
+class VendorServiceEntity extends Equatable {
+  final String? name;
+  final num? price;
+
+  const VendorServiceEntity({this.name, this.price});
+
+  @override
+  List<Object?> get props => [name, price];
 }

@@ -410,7 +410,7 @@ class _PhaseDViewState extends State<PhaseDView> {
     final errorMsg =
         'You must be within 50m of the location. Current: $distanceText km';
 
-    if (widget.order.computedStatus == OrderStatus.ready) {
+    if (widget.order.computedStatus == OrderStatus.readyToPickupFromHub) {
       return Column(
         children: [
           widget.locationWidget,

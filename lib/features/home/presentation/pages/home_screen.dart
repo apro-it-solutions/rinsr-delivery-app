@@ -27,6 +27,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   );
   final Set<String> _skippedOrderIds = {};
   String? _pendingNavigationOrderId;
+  // Track the currently open transit order to prevent double navigation
+  String? _activeTransitOrderId;
   StreamSubscription? _orderSubscription;
 
   @override
@@ -75,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   .where((o) => o.orderId == _pendingNavigationOrderId)
                   .firstOrNull;
               if (targetOrder != null) {
+                print('hello2');
                 _pendingNavigationOrderId = null;
                 Navigator.pushNamed(
                   context,
@@ -91,12 +94,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   DeliveryAgentStatus.transit;
             }).firstOrNull;
 
-            if (transitOrder != null) {
+            if (transitOrder != null &&
+                context.mounted &&
+                _activeTransitOrderId != transitOrder.orderId) {
+              _activeTransitOrderId = transitOrder.orderId;
+              print(
+                'Forcing navigation to transit order: ${transitOrder.orderId}',
+              );
               Navigator.pushNamed(
                 context,
                 HomeRouter.orderDetail,
                 arguments: transitOrder,
-              );
+              ).then((_) {
+                _activeTransitOrderId = null;
+              });
             }
           }
         },
@@ -109,17 +120,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             }
 
             if (state is HomeLoaded) {
-              final visibleOrders = state.filteredOrders
-                  .where((o) => !_skippedOrderIds.contains(o.orderId))
-                  .toList();
+              final visibleOrders = state.filteredOrders.where((o) {
+                return !_skippedOrderIds.contains(o.orderId);
+              }).toList();
 
               // Check if we should show the Single Order View
               final isHistory =
                   state.selectedFilter == DeliveryAgentStatus.delivered ||
                   state.selectedFilter == DeliveryAgentStatus.cancelled;
               if (!isHistory) {
+                print('hello world ${visibleOrders.length}');
+                final pendingOrders = visibleOrders.where((o) {
+                  print('hello world ${o.computedStatus.agentStatus}');
+                  return o.computedStatus.agentStatus ==
+                      DeliveryAgentStatus.accepted;
+                }).toList();
                 // For active tabs (Pickup, Accepted, etc.), show one card at a time.
-                return _buildSingleOrderView(state, visibleOrders);
+                return _buildSingleOrderView(state, pendingOrders);
               }
 
               // Otherwise, show the Standard History/Active List
