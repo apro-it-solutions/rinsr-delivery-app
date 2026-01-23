@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rinsr_delivery_partner/core/services/shared_preferences_service.dart';
 import 'package:rinsr_delivery_partner/core/utils/launcher_utils.dart';
 import 'package:rinsr_delivery_partner/core/utils/app_alerts.dart';
 
+import '../../../../core/constants/constants.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
+import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/home_router.dart';
 import '../bloc/order_bloc.dart';
 import '../bloc/order_event.dart';
@@ -72,6 +75,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  final String? deliveryAgentId = SharedPreferencesService.getString(
+    AppConstants.kAgentId,
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,32 +86,62 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         automaticallyImplyLeading: false,
         title: const Text('Order Details'),
       ),
-      body: PopScope(
-        canPop: false,
-        child: BlocListener<OrderBloc, OrderState>(
-          listener: (context, state) {
-            if (state is OrderUpdated) {
-              // If the order status updated, re-initialize location tracking for new target
-              final newTarget = _getTargetAddress(state.order);
-              if (newTarget.isNotEmpty) {
-                context.read<OrderBloc>().add(
-                  InitLocationEvent(targetAddress: newTarget),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final bloc = context.read<HomeBloc>();
+          final future = bloc.stream.firstWhere(
+            (element) => element is HomeError || element is HomeLoaded,
+          );
+          bloc.add(GetOrdersEvent(agentId: deliveryAgentId));
+          final state = await future;
+
+          if (state is HomeLoaded && mounted) {
+            try {
+              final updatedOrder = state.allOrders.firstWhere(
+                (element) => element.orderId == widget.order.orderId,
+              );
+              context.read<OrderBloc>().add(
+                OrderLoadEvent(order: updatedOrder),
+              );
+            } catch (e) {
+              // Order might not be in the list anymore (e.g. status changed and filtered out, or error)
+              // Ignoring for now or could show a snackbar
+            }
+          }
+        },
+        child: PopScope(
+          canPop: false,
+          child: BlocListener<OrderBloc, OrderState>(
+            listener: (context, state) {
+              if (state is OrderUpdated) {
+                // If the order status updated, re-initialize location tracking for new target
+                final newTarget = _getTargetAddress(state.order);
+                if (newTarget.isNotEmpty) {
+                  context.read<OrderBloc>().add(
+                    InitLocationEvent(targetAddress: newTarget),
+                  );
+                }
+                if (!mounted) return;
+                Navigator.pushReplacementNamed(context, HomeRouter.home);
+              }
+              if (state is OrderError) {
+                AppAlerts.showErrorSnackBar(
+                  context: context,
+                  message: state.message,
                 );
               }
-              if (!mounted) return;
-              Navigator.pushReplacementNamed(context, HomeRouter.home);
-            }
-            if (state is OrderError) {
-              AppAlerts.showErrorSnackBar(
-                context: context,
-                message: state.message,
-              );
-            }
-          },
-          child: BlocBuilder<OrderBloc, OrderState>(
-            builder: (context, state) {
-              return _buildOrderContent(context, widget.order);
             },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: BlocBuilder<OrderBloc, OrderState>(
+                builder: (context, state) {
+                  final currentOrder = state is OrderLoaded
+                      ? state.order
+                      : widget.order;
+                  return _buildOrderContent(context, currentOrder);
+                },
+              ),
+            ),
           ),
         ),
       ),

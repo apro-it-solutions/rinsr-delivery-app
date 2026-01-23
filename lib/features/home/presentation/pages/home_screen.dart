@@ -129,9 +129,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   state.selectedFilter == DeliveryAgentStatus.delivered ||
                   state.selectedFilter == DeliveryAgentStatus.cancelled;
               if (!isHistory) {
-                print('hello world ${visibleOrders.length}');
                 final pendingOrders = visibleOrders.where((o) {
-                  print('hello world ${o.computedStatus.agentStatus}');
                   return o.computedStatus.agentStatus ==
                       DeliveryAgentStatus.accepted;
                 }).toList();

@@ -8,6 +8,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/app_alerts.dart';
 import '../../../../core/widgets/continue_button.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
+import '../../../home/presentation/bloc/home_bloc.dart'; // Added
+import '../../../../core/constants/constants.dart'; // Added
+import '../../../../core/services/shared_preferences_service.dart'; // Added
 import '../bloc/order_bloc.dart';
 import '../bloc/order_event.dart';
 import 'order_info_card.dart';
@@ -154,23 +157,106 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
           ),
         ),
         const SizedBox(height: 32),
+        if (widget.order.paymentStatus != 'paid') ...[
+          Center(
+            child: TextButton.icon(
+              onPressed: _isCheckingPayment ? null : _checkPaymentStatus,
+              icon: _isCheckingPayment
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              label: Text(
+                _isCheckingPayment
+                    ? 'Checking Status...'
+                    : 'Check Payment Status',
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         ContinueButton(
           text: 'Confirm Delivery',
           onPressed: () {
-            if (photo != null) {
+            if (photo != null && widget.order.paymentStatus == 'paid') {
               context.read<OrderBloc>().add(
                 SubmitProofOfDelivery(photoPath: photo!.path),
               );
             } else {
+              if (widget.order.paymentStatus != 'paid') {
+                _checkPaymentStatus(); // Auto-check on tap if unpaid
+              }
               AppAlerts.showErrorSnackBar(
                 context: context,
-                message: 'Please take a proof of delivery photo',
+                message: _errorMessage(photo == null ? 'photo' : 'payment'),
               );
             }
           },
         ),
       ],
     );
+  }
+
+  bool _isCheckingPayment = false;
+
+  Future<void> _checkPaymentStatus() async {
+    setState(() {
+      _isCheckingPayment = true;
+    });
+
+    try {
+      final agentId = SharedPreferencesService.getString(AppConstants.kAgentId);
+      final homeBloc = context.read<HomeBloc>();
+
+      // Trigger refresh
+      homeBloc.add(GetOrdersEvent(agentId: agentId));
+
+      // Wait for result
+      final state = await homeBloc.stream.firstWhere(
+        (element) => element is HomeError || element is HomeLoaded,
+      );
+
+      if (state is HomeLoaded && mounted) {
+        try {
+          final updatedOrder = state.allOrders.firstWhere(
+            (element) => element.orderId == widget.order.orderId,
+          );
+
+          if (updatedOrder.paymentStatus == 'paid') {
+            AppAlerts.showSuccessSnackBar(
+              context: context,
+              message: 'Payment verified successfully!',
+            );
+          }
+
+          // Update OrderBloc
+          context.read<OrderBloc>().add(OrderLoadEvent(order: updatedOrder));
+        } catch (e) {
+          // Order not found in list logic
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking payment status: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingPayment = false;
+        });
+      }
+    }
+  }
+
+  String _errorMessage(String type) {
+    switch (type) {
+      case 'photo':
+        return 'Please take a proof of delivery photo';
+      case 'payment':
+        return 'Please verify user payment for order';
+      default:
+        return 'please try again';
+    }
   }
 }
 
