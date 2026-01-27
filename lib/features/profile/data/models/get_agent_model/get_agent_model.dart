@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rinsr_delivery_partner/features/profile/domain/entities/get_agent_entity.dart';
+import '../../../domain/entities/get_agent_entity.dart';
 
 import 'delivery_partner.dart';
 

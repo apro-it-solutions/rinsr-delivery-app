@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rinsr_delivery_partner/features/order/domain/entities/notify_user_response_entity.dart';
+import '../../../domain/entities/notify_user_response_entity.dart';
 
 part 'notify_users_response_model.g.dart';
 

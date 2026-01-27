@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rinsr_delivery_partner/core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 import 'enums.dart';
 
 enum DeliveryAgentStatus {

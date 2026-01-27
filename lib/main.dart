@@ -1,11 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rinsr_delivery_partner/core/services/shared_preferences_service.dart';
-import 'package:rinsr_delivery_partner/features/home/presentation/bloc/home_bloc.dart';
-import 'package:rinsr_delivery_partner/features/order/presentation/bloc/order_bloc.dart';
-import 'package:rinsr_delivery_partner/features/profile/presentation/bloc/profile_bloc.dart';
-import 'package:rinsr_delivery_partner/firebase_options.dart';
+import 'core/services/shared_preferences_service.dart';
+import 'features/home/presentation/bloc/home_bloc.dart';
+import 'features/order/presentation/bloc/order_bloc.dart';
+import 'features/profile/presentation/bloc/profile_bloc.dart';
+import 'firebase_options.dart';
 
 import 'core/injection_container.dart' as di;
 import 'core/routing/router.dart';

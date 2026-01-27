@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:rinsr_delivery_partner/core/constants/constants.dart';
+import '../../../../core/constants/constants.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/constants/status_extensions.dart';
 import '../../../../core/injection_container.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:rinsr_delivery_partner/core/utils/app_alerts.dart';
-import 'package:rinsr_delivery_partner/features/home/presentation/home_router.dart';
+import '../../../../core/utils/app_alerts.dart';
+import '../../../home/presentation/home_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/responsive_utils.dart';

@@ -1,10 +1,10 @@
 import 'package:dartz/dartz.dart';
 
-import 'package:rinsr_delivery_partner/core/error/failures.dart';
-import 'package:rinsr_delivery_partner/core/network/api_handler.dart';
-import 'package:rinsr_delivery_partner/core/network/network_info.dart';
+import '../../../../core/error/failures.dart';
+import '../../../../core/network/api_handler.dart';
+import '../../../../core/network/network_info.dart';
 
-import 'package:rinsr_delivery_partner/features/profile/domain/entities/get_agent_entity.dart';
+import '../../domain/entities/get_agent_entity.dart';
 
 import '../../domain/repositories/profile_repository.dart';
 import '../data_sources/profile_remote_data_source.dart';

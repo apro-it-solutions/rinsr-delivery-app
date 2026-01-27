@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:rinsr_delivery_partner/core/constants/api_urls.dart';
+import '../../../../core/constants/api_urls.dart';
 
 import '../models/get_agent_model/get_agent_model.dart';
 

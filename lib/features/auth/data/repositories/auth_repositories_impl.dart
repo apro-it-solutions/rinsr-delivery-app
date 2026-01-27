@@ -1,18 +1,18 @@
 import 'package:dartz/dartz.dart';
-import 'package:rinsr_delivery_partner/core/network/api_handler.dart';
-import 'package:rinsr_delivery_partner/core/network/network_info.dart';
-import 'package:rinsr_delivery_partner/features/auth/data/models/verify_otp/verify_otp_request_model/verify_otp_request_model.dart';
-import 'package:rinsr_delivery_partner/features/auth/domain/entities/resend_otp/resend_otp_request_entity.dart';
+import '../../../../core/network/api_handler.dart';
+import '../../../../core/network/network_info.dart';
+import '../models/verify_otp/verify_otp_request_model/verify_otp_request_model.dart';
+import '../../domain/entities/resend_otp/resend_otp_request_entity.dart';
 
-import 'package:rinsr_delivery_partner/features/auth/domain/entities/resend_otp/resend_otp_response_entity.dart';
+import '../../domain/entities/resend_otp/resend_otp_response_entity.dart';
 
-import 'package:rinsr_delivery_partner/features/auth/domain/entities/send_otp/send_otp_request_entity.dart';
+import '../../domain/entities/send_otp/send_otp_request_entity.dart';
 
-import 'package:rinsr_delivery_partner/features/auth/domain/entities/send_otp/send_otp_response_entity.dart';
+import '../../domain/entities/send_otp/send_otp_response_entity.dart';
 
-import 'package:rinsr_delivery_partner/features/auth/domain/entities/verify_user/verify_user_request_entity.dart';
+import '../../domain/entities/verify_user/verify_user_request_entity.dart';
 
-import 'package:rinsr_delivery_partner/features/auth/domain/entities/verify_user/verify_user_response_entity.dart';
+import '../../domain/entities/verify_user/verify_user_response_entity.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../domain/repositories/auth_repository.dart';

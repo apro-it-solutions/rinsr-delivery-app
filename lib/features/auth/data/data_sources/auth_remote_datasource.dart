@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:rinsr_delivery_partner/core/constants/api_urls.dart';
+import '../../../../core/constants/api_urls.dart';
 
 import '../models/resend_otp/resend_otp_request_model/resend_otp_request_model.dart';
 import '../models/resend_otp/resend_otp_response_model/resend_otp_response_model.dart';

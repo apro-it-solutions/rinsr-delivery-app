@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rinsr_delivery_partner/features/order/domain/entities/update_order_response_entity.dart';
+import '../../../domain/entities/update_order_response_entity.dart';
 
 import 'order.dart';
 

@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:rinsr_delivery_partner/core/constants/constants.dart';
-import 'package:rinsr_delivery_partner/features/order/data/models/accept_order_response_model/accept_order_response_model.dart';
-import 'package:rinsr_delivery_partner/features/order/data/models/notify_users_response_model/notify_users_response_model.dart';
+import '../../../../core/constants/constants.dart';
+import '../models/accept_order_response_model/accept_order_response_model.dart';
+import '../models/notify_users_response_model/notify_users_response_model.dart';
 import '../../../../core/constants/api_urls.dart';
 import '../../../../core/services/shared_preferences_service.dart';
 import '../models/update_order_model/update_order_model.dart';

@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:rinsr_delivery_partner/features/auth/domain/entities/verify_user/verify_user_response_entity.dart';
+import '../entities/verify_user/verify_user_response_entity.dart';
 
 import '../../../../core/error/failures.dart';
 import '../entities/resend_otp/resend_otp_request_entity.dart';

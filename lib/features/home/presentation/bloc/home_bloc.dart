@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:rinsr_delivery_partner/core/usecases/usecase.dart';
-import 'package:rinsr_delivery_partner/features/home/domain/usecases/get_orders.dart';
-import 'package:rinsr_delivery_partner/features/order/domain/entities/accept_order_response_entity.dart';
+import '../../../../core/usecases/usecase.dart';
+import '../../domain/usecases/get_orders.dart';
+import '../../../order/domain/entities/accept_order_response_entity.dart';
 
 import '../../../../core/constants/status_extensions.dart';
 import '../../../order/domain/entities/accept_order_params.dart';

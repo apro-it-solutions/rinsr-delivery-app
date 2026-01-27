@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:rinsr_delivery_partner/core/usecases/usecase.dart';
-import 'package:rinsr_delivery_partner/features/profile/domain/entities/get_agent_entity.dart';
+import '../../../../core/usecases/usecase.dart';
+import '../../domain/entities/get_agent_entity.dart';
 
 import '../../domain/usecases/get_agent_details.dart';
 

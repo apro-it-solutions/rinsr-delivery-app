@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:rinsr_delivery_partner/core/usecases/usecase.dart';
+import '../../../../core/usecases/usecase.dart';
 
 import '../../../../core/error/failures.dart';
 import '../entities/get_agent_entity.dart';

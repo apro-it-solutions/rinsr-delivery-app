@@ -1,13 +1,13 @@
 import 'package:dartz/dartz.dart';
 
-import 'package:rinsr_delivery_partner/core/error/failures.dart';
-import 'package:rinsr_delivery_partner/core/network/api_handler.dart';
-import 'package:rinsr_delivery_partner/features/order/domain/entities/accept_order_response_entity.dart';
-import 'package:rinsr_delivery_partner/features/order/domain/entities/notify_user_response_entity.dart';
+import '../../../../core/error/failures.dart';
+import '../../../../core/network/api_handler.dart';
+import '../../domain/entities/accept_order_response_entity.dart';
+import '../../domain/entities/notify_user_response_entity.dart';
 
-import 'package:rinsr_delivery_partner/features/order/domain/entities/update_order_params.dart';
+import '../../domain/entities/update_order_params.dart';
 
-import 'package:rinsr_delivery_partner/features/order/domain/entities/update_order_response_entity.dart';
+import '../../domain/entities/update_order_response_entity.dart';
 
 import '../../../../core/network/network_info.dart';
 import '../../domain/repositories/order_repository.dart';

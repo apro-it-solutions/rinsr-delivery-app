@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:rinsr_delivery_partner/features/home/domain/entities/get_orders_entity.dart';
+import '../../../../home/domain/entities/get_orders_entity.dart';
 
 part 'pickup_time_slot.g.dart';
 

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:rinsr_delivery_partner/features/home/presentation/bloc/home_bloc.dart';
+import '../../features/home/presentation/bloc/home_bloc.dart';
 import 'package:rinsr_delivery_partner/core/injection_container.dart'; // Import sl locator
 
 import '../constants/api_urls.dart';
