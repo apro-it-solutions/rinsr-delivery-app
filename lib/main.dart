@@ -1,18 +1,18 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'core/services/shared_preferences_service.dart';
-import 'features/home/presentation/bloc/home_bloc.dart';
-import 'features/order/presentation/bloc/order_bloc.dart';
-import 'features/profile/presentation/bloc/profile_bloc.dart';
-import 'firebase_options.dart';
 
 import 'core/injection_container.dart' as di;
 import 'core/routing/router.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/location_service.dart';
+import 'core/services/shared_preferences_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/home/presentation/bloc/home_bloc.dart';
+import 'features/order/presentation/bloc/order_bloc.dart';
+import 'features/profile/presentation/bloc/profile_bloc.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
