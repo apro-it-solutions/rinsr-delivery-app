@@ -95,7 +95,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           bloc.add(GetOrdersEvent(agentId: deliveryAgentId));
           final state = await future;
 
-          if (state is HomeLoaded && mounted) {
+          if (state is HomeLoaded && context.mounted) {
             try {
               final updatedOrder = state.allOrders.firstWhere(
                 (element) => element.orderId == widget.order.orderId,

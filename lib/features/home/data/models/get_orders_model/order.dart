@@ -22,6 +22,9 @@ class Order extends OrderDetailsEntity {
   @override
   @JsonKey(name: 'pickup_address')
   final PickupAddress? pickupAddress;
+  @override
+  @JsonKey(name: 'order_id')
+  final int? displayOrderID;
   @JsonKey(name: '_id')
   final String? id;
   @override
@@ -119,6 +122,7 @@ class Order extends OrderDetailsEntity {
   final String? orderReturnedDeliveryPartner;
 
   const Order({
+    this.displayOrderID,
     this.pickupTimeSlot,
     this.pickupAddress,
     this.id,
@@ -188,6 +192,7 @@ class Order extends OrderDetailsEntity {
          pickupTimeSlot: pickupTimeSlot,
          photoPath: photoPath,
          cancelReason: cancelReason,
+         displayOrderID: displayOrderID,
        );
 
   factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
@@ -228,7 +233,8 @@ class Order extends OrderDetailsEntity {
     PlanIdEntity? planId,
     String? photoPath,
     String? cancelReason,
-    String? orderId, // Added to match entity signature, though mapped to id
+    String? orderId,
+    int? displayOrderID,
   }) {
     return Order(
       pickupTimeSlot: pickupTimeSlot as PickupTimeSlot? ?? this.pickupTimeSlot,
@@ -265,6 +271,7 @@ class Order extends OrderDetailsEntity {
       planId: planId as PlanId? ?? this.planId,
       photoPath: photoPath ?? this.photoPath,
       cancelReason: cancelReason ?? this.cancelReason,
+      displayOrderID: displayOrderID ?? this.displayOrderID,
     );
   }
 }

@@ -58,7 +58,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         );
       }
 
-      print('hello${userOrders.length}');
       emit(
         HomeLoaded(
           allOrders: userOrders,

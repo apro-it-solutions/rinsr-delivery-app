@@ -7,6 +7,7 @@ part of 'order.dart';
 // **************************************************************************
 
 Order _$OrderFromJson(Map<String, dynamic> json) => Order(
+  displayOrderID: (json['order_id'] as num?)?.toInt(),
   pickupTimeSlot: json['pickup_time_slot'] == null
       ? null
       : PickupTimeSlot.fromJson(
@@ -83,6 +84,7 @@ Order _$OrderFromJson(Map<String, dynamic> json) => Order(
 Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
   'pickup_time_slot': instance.pickupTimeSlot,
   'pickup_address': instance.pickupAddress,
+  'order_id': instance.displayOrderID,
   '_id': instance.id,
   'user_id': instance.userId,
   'pickup_date': instance.pickupDate?.toIso8601String(),

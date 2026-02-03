@@ -142,7 +142,7 @@ class _OrderListItemState extends State<OrderListItem> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Order #${widget.order.orderId}',
+                              'Order #RIN-${widget.order.displayOrderID}',
                               style: AppTextStyles.textMediumfs16(context)
                                   .copyWith(
                                     fontWeight: FontWeight.w800,

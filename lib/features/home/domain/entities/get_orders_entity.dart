@@ -17,6 +17,7 @@ class OrderDetailsEntity extends Equatable {
   final PickupAddressEntity? pickupAddress;
   final List<String>? deliveryPartnerIds;
   final String? orderId;
+  final int? displayOrderID;
   final UserIdEntity? userId;
   final DateTime? pickupDate;
   final ServiceIdEntity? serviceId;
@@ -50,6 +51,7 @@ class OrderDetailsEntity extends Equatable {
   final String? orderReturnedDeliveryPartner;
 
   const OrderDetailsEntity({
+    this.displayOrderID,
     this.pickupTimeSlot,
     this.pickupAddress,
     this.deliveryPartnerIds,
@@ -221,6 +223,7 @@ class OrderDetailsEntity extends Equatable {
     PlanIdEntity? planId,
     String? photoPath,
     String? cancelReason,
+    int? displayOrderID,
   }) {
     return OrderDetailsEntity(
       pickupTimeSlot: pickupTimeSlot ?? this.pickupTimeSlot,
@@ -256,6 +259,7 @@ class OrderDetailsEntity extends Equatable {
       planId: planId ?? this.planId,
       photoPath: photoPath ?? this.photoPath,
       cancelReason: cancelReason ?? this.cancelReason,
+      displayOrderID: displayOrderID ?? this.displayOrderID,
     );
   }
 }

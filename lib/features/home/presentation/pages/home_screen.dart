@@ -77,7 +77,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   .where((o) => o.orderId == _pendingNavigationOrderId)
                   .firstOrNull;
               if (targetOrder != null) {
-                print('hello2');
                 _pendingNavigationOrderId = null;
                 Navigator.pushNamed(
                   context,
@@ -98,9 +97,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 context.mounted &&
                 _activeTransitOrderId != transitOrder.orderId) {
               _activeTransitOrderId = transitOrder.orderId;
-              print(
-                'Forcing navigation to transit order: ${transitOrder.orderId}',
-              );
+
               Navigator.pushNamed(
                 context,
                 HomeRouter.orderDetail,

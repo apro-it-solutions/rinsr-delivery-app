@@ -128,7 +128,7 @@ class _SingleOrderViewState extends State<SingleOrderView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order #${widget.order.orderId}',
+                      'Order #RIN-${widget.order.displayOrderID}',
                       style: AppTextStyles.textMediumfs18(context).copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.headerTextColor,
