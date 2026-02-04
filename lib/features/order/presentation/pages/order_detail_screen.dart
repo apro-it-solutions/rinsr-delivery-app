@@ -193,7 +193,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           case OrderStatus.pickedUp:
             return PhaseAView(
               order: order,
-
               isEnabled: isEnabled,
               locationWidget: locationWidget,
               distance: distanceInMeters,

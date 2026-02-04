@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:rinsr_delivery_partner/features/auth/presentation/auth_router.dart';
+import '../routing/router.dart';
 
 import '../constants/constants.dart';
 import '../services/shared_preferences_service.dart';
@@ -23,6 +25,17 @@ class DioConfig {
           }
 
           return handler.next(options);
+        },
+        onError: (DioException error, ErrorInterceptorHandler handler) async {
+          if (error.response?.statusCode == 401) {
+            // Token expired or invalid
+            await SharedPreferencesService.clear();
+            await AppRouter.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              AuthRouter.login,
+              (route) => false,
+            );
+          }
+          return handler.next(error);
         },
       ),
     );

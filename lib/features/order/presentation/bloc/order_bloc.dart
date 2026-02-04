@@ -26,7 +26,6 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<LocationUpdatedEvent>(_onLocationUpdatedEvent);
     on<ArrivedAtLocation>(_onArrivedAtLocation);
     on<SubmitPickupDetails>(_onSubmitPickupDetails);
-    on<ScanQrCode>(_onScanQrCode);
     on<ConfirmHubDrop>(_onConfirmHubDrop);
     on<ConfirmVendorPickup>(_onConfirmVendorPickup);
     on<ConfirmVendorDrop>(_onConfirmVendorDrop);
@@ -57,41 +56,23 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
-            // status: currentOrder.status ?? 'scheduled',
-            status: 'picked_up', // REMOVED: Status update happens after QR Scan
+            status: 'picked_up',
             photoPath: event.photoPath,
+            weight: event.weight,
+            barcode: event.barcode,
           ),
         );
         result.fold(
           (failure) =>
               emit(const OrderError('Failed to update pickup details')),
           (response) => emit(
-            OrderLoaded(
+            OrderUpdated(
               currentOrder.copyWith(
+                status: 'picked_up',
                 photoPath: event.photoPath,
-                // status: 'picked_up', // REMOVED
               ),
             ),
           ),
-        );
-      }
-    }
-  }
-
-  Future<void> _onScanQrCode(ScanQrCode event, Emitter<OrderState> emit) async {
-    if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
-      if (currentOrder.orderId != null) {
-        final result = await updateOrder(
-          UpdateOrderParams(
-            orderId: currentOrder.orderId!,
-            status: 'picked_up',
-          ),
-        );
-        result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
-          (response) =>
-              emit(OrderUpdated(currentOrder.copyWith(status: 'picked_up'))),
         );
       }
     }

@@ -24,14 +24,18 @@ class ArrivedAtLocation extends OrderEvent {}
 
 class SubmitPickupDetails extends OrderEvent {
   final String photoPath;
+  final String weight;
+  final String barcode;
 
-  const SubmitPickupDetails({required this.photoPath});
+  const SubmitPickupDetails({
+    required this.photoPath,
+    required this.weight,
+    required this.barcode,
+  });
 
   @override
-  List<Object> get props => [photoPath];
+  List<Object> get props => [photoPath, weight, barcode];
 }
-
-class ScanQrCode extends OrderEvent {} // Confirm Pickup
 
 class ConfirmHubDrop extends OrderEvent {}
 

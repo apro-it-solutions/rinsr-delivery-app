@@ -12,6 +12,8 @@ abstract class OrderRemoteDataSource {
     required String orderId,
     required String status,
     String? photoPath,
+    String? weight,
+    String? barcode,
   });
   Future<NotifyUsersResponseModel> notifyUsers(String orderId);
   Future<AcceptOrderResponseModel> acceptOrder(String orderId, String type);
@@ -26,12 +28,21 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
     required String orderId,
     required String status,
     String? photoPath,
+    String? weight,
+    String? barcode,
   }) async {
     dynamic data;
 
     if (photoPath != null) {
       if (kDebugMode) {
-        print({'status': status, 'image': photoPath}.toString());
+        print(
+          {
+            'status': status,
+            'image': photoPath,
+            if (weight != null) 'weight': weight,
+            if (barcode != null) 'barcode': barcode,
+          }.toString(),
+        );
       }
       data = FormData.fromMap({
         'delivery_id': SharedPreferencesService.getString(
@@ -39,6 +50,8 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
         ),
         'status': status,
         'image': await MultipartFile.fromFile(photoPath),
+        if (weight != null) 'total_weight_kg': weight,
+        if (barcode != null) 'barcode_id': barcode,
       });
     } else {
       data = {

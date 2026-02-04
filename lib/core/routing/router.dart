@@ -6,6 +6,8 @@ import '../../features/home/presentation/home_router.dart';
 
 class AppRouter {
   static const String splash = '/splash';
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   static Route<dynamic>? generateRoute(RouteSettings settings) {
     switch (settings.name) {

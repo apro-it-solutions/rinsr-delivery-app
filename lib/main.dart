@@ -64,6 +64,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: AppRouter.navigatorKey,
         debugShowCheckedModeBanner: false,
         initialRoute: AppRouter.splash,
         onGenerateRoute: AppRouter.onGenerateRoute,

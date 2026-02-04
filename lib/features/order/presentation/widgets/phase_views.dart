@@ -12,7 +12,6 @@ import '../widgets/order_info_card.dart';
 import '../widgets/order_navigation_step.dart';
 import '../widgets/order_pickup_form.dart';
 import '../widgets/order_alert_banner.dart';
-// import 'order_scan_qr_step.dart';
 
 class PhaseAView extends StatefulWidget {
   final OrderDetailsEntity order;
@@ -34,91 +33,99 @@ class PhaseAView extends StatefulWidget {
 }
 
 class _PhaseAViewState extends State<PhaseAView> {
-  // Local state for phase steps
+  // 0: Arrived at Location
+  // 1: Pickup Details (Photo, Weight, Scan)
   int _currentStep = 0;
 
   @override
   Widget build(BuildContext context) {
-    final distanceText = widget.distance != null
-        ? (widget.distance! / 1000).toStringAsFixed(2)
-        : 'Unknown';
-    final errorMsg =
-        'You must be within 50m of the location. Current distance: $distanceText km';
-
     if (widget.order.computedStatus == OrderStatus.scheduled) {
+      // Step 0: Arrived at Location
       if (_currentStep == 0) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            widget.locationWidget,
-            if (widget.order.heavyItems != null &&
-                widget.order.heavyItems!.isNotEmpty &&
-                widget.order.heavyItems != 'None' &&
-                widget.order.heavyItems != 'No')
-              OrderAlertBanner(
-                title: 'Heavy Items',
-                message: 'This order contains: ${widget.order.heavyItems}',
-                color: Colors.orange.shade800,
-                icon: Icons.warning_amber_rounded,
-              ),
-            OrderInfoCard(
-              title: 'Customer Name',
-              content: widget.order.userName.isNotEmpty
-                  ? widget.order.userName
-                  : 'N/A',
-              icon: Icons.person,
-            ),
-            const SizedBox(height: 12),
-            if (widget.order.userPhone.isNotEmpty)
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              widget.locationWidget,
+              if (widget.order.heavyItems != null &&
+                  widget.order.heavyItems!.isNotEmpty &&
+                  widget.order.heavyItems != 'None' &&
+                  widget.order.heavyItems != 'No') ...[
+                const SizedBox(height: 16),
+                OrderAlertBanner(
+                  title: 'Heavy Items',
+                  message: 'This order contains: ${widget.order.heavyItems}',
+                  color: Colors.orange.shade800,
+                  icon: Icons.warning_amber_rounded,
+                ),
+              ],
+              const SizedBox(height: 16),
               OrderInfoCard(
-                title: 'Customer Phone',
-                content: widget.order.userPhone,
-                icon: Icons.phone,
-                onActionTap: () =>
-                    LauncherUtils.launchPhone(context, widget.order.userPhone),
-                actionIcon: Icons.call,
+                title: 'Customer Name',
+                content: widget.order.userName.isNotEmpty
+                    ? widget.order.userName
+                    : 'N/A',
+                icon: Icons.person,
               ),
-            const SizedBox(height: 12),
-            const Divider(height: 32),
-            OrderNavigationStep(
-              title: 'Pickup from User',
-              address: widget.order.userAddress,
-              buttonText: 'Arrived at Location',
-              onButtonPressed: widget.isEnabled
-                  ? () async {
-                      context.read<OrderBloc>().add(
-                        NotifyUserEvent(orderId: widget.order.orderId ?? ''),
-                      );
-                      setState(() => _currentStep = 1);
-                    }
-                  : () {
-                      AppAlerts.showErrorSnackBar(
-                        context: context,
-                        message: errorMsg,
-                      );
-                    },
-              onActionTap: () =>
-                  LauncherUtils.launchMaps(context, widget.order.userAddress),
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 12),
+              if (widget.order.userPhone.isNotEmpty)
+                OrderInfoCard(
+                  title: 'Customer Phone',
+                  content: widget.order.userPhone,
+                  icon: Icons.phone,
+                  onActionTap: () => LauncherUtils.launchPhone(
+                    context,
+                    widget.order.userPhone,
+                  ),
+                  actionIcon: Icons.call,
+                ),
+              const SizedBox(height: 12),
+              const Divider(height: 32),
+              OrderNavigationStep(
+                title: 'Pickup from User',
+                address: widget.order.userAddress,
+                buttonText: 'Arrived at Location',
+                onButtonPressed: widget.isEnabled
+                    ? () async {
+                        context.read<OrderBloc>().add(
+                          NotifyUserEvent(orderId: widget.order.orderId ?? ''),
+                        );
+                        setState(() {
+                          _currentStep = 1;
+                        });
+                      }
+                    : () {
+                        final distanceText = widget.distance != null
+                            ? (widget.distance! / 1000).toStringAsFixed(2)
+                            : 'Unknown';
+                        final errorMsg =
+                            'You must be within 50m of the location. Current distance: $distanceText km';
+                        AppAlerts.showErrorSnackBar(
+                          context: context,
+                          message: errorMsg,
+                        );
+                      },
+                onActionTap: () =>
+                    LauncherUtils.launchMaps(context, widget.order.userAddress),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         );
       } else if (_currentStep == 1) {
         return OrderPickupForm(
-          onSubmitted: () {
-            // Bypass QR Scan step
-            // setState(() => _currentStep = 2);
-            context.read<OrderBloc>().add(ScanQrCode());
+          onSubmitted: (photoPath, weight, barcode) {
+            context.read<OrderBloc>().add(
+              SubmitPickupDetails(
+                barcode: barcode,
+                photoPath: photoPath,
+                weight: weight,
+              ),
+            );
           },
         );
       }
-      // else if (_currentStep == 2) {
-      //   return OrderScanQrStep(
-      //     onScanCompleted: () {
-      //       context.read<OrderBloc>().add(ScanQrCode());
-      //     },
-      //   );
-      // }
     } else if (widget.order.computedStatus == OrderStatus.pickedUp) {
       return Column(
         children: [
@@ -153,6 +160,11 @@ class _PhaseAViewState extends State<PhaseAView> {
                     context.read<OrderBloc>().add(ConfirmHubDrop());
                   }
                 : () {
+                    final distanceText = widget.distance != null
+                        ? (widget.distance! / 1000).toStringAsFixed(2)
+                        : 'Unknown';
+                    final errorMsg =
+                        'You must be within 50m of the location. Current distance: $distanceText km';
                     AppAlerts.showErrorSnackBar(
                       context: context,
                       message: errorMsg,

@@ -35,6 +35,8 @@ class OrderRepositoriesImpl implements OrderRepository {
         orderId: params.orderId,
         status: params.status,
         photoPath: params.photoPath,
+        weight: params.weight,
+        barcode: params.barcode,
       );
     });
   }
