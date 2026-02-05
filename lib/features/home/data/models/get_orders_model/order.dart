@@ -121,6 +121,10 @@ class Order extends OrderDetailsEntity {
   @JsonKey(name: 'order_returned_delivery_partner')
   final String? orderReturnedDeliveryPartner;
 
+  @override
+  @JsonKey(name: 'barcode_id')
+  final String? barcode;
+
   const Order({
     this.displayOrderID,
     this.pickupTimeSlot,
@@ -157,6 +161,7 @@ class Order extends OrderDetailsEntity {
     this.deliveryUpdates,
     this.pickedUpDeliveryPartnerId,
     this.orderReturnedDeliveryPartner,
+    this.barcode,
   }) : super(
          orderReturnedDeliveryPartner: orderReturnedDeliveryPartner,
          pickedUpDeliveryPartnerId: pickedUpDeliveryPartnerId,
@@ -193,6 +198,7 @@ class Order extends OrderDetailsEntity {
          photoPath: photoPath,
          cancelReason: cancelReason,
          displayOrderID: displayOrderID,
+         barcode: barcode,
        );
 
   factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);

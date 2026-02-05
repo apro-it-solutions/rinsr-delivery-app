@@ -1,7 +1,4 @@
-import 'package:equatable/equatable.dart';
-import 'package:geolocator/geolocator.dart';
-
-import '../../../home/domain/entities/get_orders_entity.dart';
+part of 'order_bloc.dart';
 
 abstract class OrderEvent extends Equatable {
   const OrderEvent();
@@ -97,3 +94,20 @@ class LocationErrorEvent extends OrderEvent {
   @override
   List<Object> get props => [message];
 }
+
+final class StartWeightReading extends OrderEvent {}
+
+final class WeightReadingUpdated extends OrderEvent {
+  final double weight;
+
+  const WeightReadingUpdated({required this.weight});
+
+  @override
+  List<Object> get props => [weight];
+}
+
+final class StopWeightReading extends OrderEvent {}
+
+final class LockWeightReading extends OrderEvent {}
+
+final class UnlockWeightReading extends OrderEvent {}

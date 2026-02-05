@@ -1,25 +1,31 @@
 import 'dart:async';
 
+import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart'; // For Position type
+import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
 
 import '../../../../core/services/location_service.dart';
+import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../domain/entities/update_order_params.dart';
 import '../../domain/usecases/notify_user.dart';
 import '../../domain/usecases/update_order.dart';
-import 'order_event.dart';
-import 'order_state.dart';
+part 'order_event.dart';
+part 'order_state.dart';
 
 class OrderBloc extends Bloc<OrderEvent, OrderState> {
   final UpdateOrder updateOrder;
   final NotifyUser notifyUser;
   final LocationService locationService;
   StreamSubscription<Position>? _positionSubscription;
+  StreamSubscription<List<int>>? _weightSubscription;
+  final BluetoothScannerService bluetoothScannerService;
 
   OrderBloc({
     required this.updateOrder,
     required this.notifyUser,
     required this.locationService,
+    required this.bluetoothScannerService,
   }) : super(OrderInitial()) {
     on<OrderLoadEvent>(_onOrderLoadEvent);
     on<InitLocationEvent>(_onInitLocationEvent);
@@ -34,6 +40,11 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<StartDelivery>(_onStartDelivery);
     on<SubmitProofOfDelivery>(_onSubmitProofOfDelivery);
     on<NotifyUserEvent>(_onNotifyUserEvent);
+    on<StartWeightReading>(_onStartWeightReading);
+    on<StopWeightReading>(_onStopWeightReading);
+    on<LockWeightReading>(_onLockWeightReading);
+    on<UnlockWeightReading>(_onUnlockWeightReading);
+    on<WeightReadingUpdated>(_onWeightReadingUpdated);
   }
 
   // Phase A Handlers
@@ -360,6 +371,70 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   @override
   Future<void> close() {
     _positionSubscription?.cancel();
+    _weightSubscription?.cancel();
     return super.close();
+  }
+
+  FutureOr<void> _onStartWeightReading(
+    StartWeightReading event,
+    Emitter<OrderState> emit,
+  ) {
+    if (_weightSubscription == null) {
+      bluetoothScannerService.startScan();
+      _weightSubscription = bluetoothScannerService.stream.listen((data) {
+        add(WeightReadingUpdated(weight: parseWeightKg(data)));
+      });
+    }
+  }
+
+  FutureOr<void> _onStopWeightReading(
+    StopWeightReading event,
+    Emitter<OrderState> emit,
+  ) {
+    _weightSubscription?.cancel();
+    _weightSubscription = null;
+    bluetoothScannerService.stopScan();
+  }
+
+  FutureOr<void> _onLockWeightReading(
+    LockWeightReading event,
+    Emitter<OrderState> emit,
+  ) {
+    if (state is OrderLoaded) {
+      _weightSubscription?.cancel();
+      _weightSubscription = null;
+      bluetoothScannerService.stopScan();
+      emit((state as OrderLoaded).copyWith(isWeightLocked: true));
+    }
+  }
+
+  FutureOr<void> _onUnlockWeightReading(
+    UnlockWeightReading event,
+    Emitter<OrderState> emit,
+  ) {
+    if (state is OrderLoaded) {
+      if (_weightSubscription == null) {
+        bluetoothScannerService.startScan();
+        _weightSubscription = bluetoothScannerService.stream.listen((data) {
+          add(WeightReadingUpdated(weight: parseWeightKg(data)));
+        });
+      }
+      emit((state as OrderLoaded).copyWith(isWeightLocked: false));
+    }
+  }
+
+  FutureOr<void> _onWeightReadingUpdated(
+    WeightReadingUpdated event,
+    Emitter<OrderState> emit,
+  ) {
+    if (state is OrderLoaded) {
+      emit((state as OrderLoaded).copyWith(weight: event.weight));
+    }
+  }
+
+  double parseWeightKg(List<int> bytes) {
+    if (bytes.length < 12) return 0.0;
+    final raw = (bytes[10] << 8) | bytes[11];
+    return raw / 100.0;
   }
 }

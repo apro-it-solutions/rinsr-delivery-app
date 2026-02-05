@@ -10,8 +10,6 @@ import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../../home/presentation/bloc/home_bloc.dart';
 import '../../../home/presentation/home_router.dart';
 import '../bloc/order_bloc.dart';
-import '../bloc/order_event.dart';
-import '../bloc/order_state.dart';
 import '../widgets/order_completed_view.dart';
 import '../widgets/order_delivery_form.dart';
 import '../widgets/order_summary_card.dart';

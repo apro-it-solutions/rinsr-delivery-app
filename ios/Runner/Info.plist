@@ -63,5 +63,7 @@
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Bluetooth required to read weight from device</string>
 </dict>
 </plist>

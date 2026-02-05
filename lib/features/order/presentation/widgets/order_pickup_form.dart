@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/app_alerts.dart';
+import '../bloc/order_bloc.dart';
 import '../pages/barcode_scanner_screen.dart';
 
 class OrderPickupForm extends StatefulWidget {
@@ -23,7 +25,15 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
   @override
   void dispose() {
     _weightController.dispose();
+    context.read<OrderBloc>().add(StopWeightReading());
+
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<OrderBloc>().add(StartWeightReading());
   }
 
   @override
@@ -188,85 +198,143 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
         const SizedBox(height: 24),
 
         // 2. Weight Section
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade200),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.scale_outlined,
-                    size: 32,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Weight Verification',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Enter the weight of the laundry bag before scanning.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600, height: 1.4),
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _weightController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Weight',
-                    labelStyle: const TextStyle(color: AppColors.primary),
-                    hintText: '0.00',
-                    suffixText: 'kg',
-                    prefixIcon: const Icon(Icons.monitor_weight_outlined),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
+        BlocConsumer<OrderBloc, OrderState>(
+          listener: (context, state) {
+            if (state is OrderLoaded &&
+                state.weight != null &&
+                !state.isWeightLocked) {
+              _weightController.text = state.weight!.toStringAsFixed(2);
+            }
+          },
+          builder: (context, state) {
+            final isLocked = state is OrderLoaded && state.isWeightLocked;
+            return Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.scale_outlined,
+                        size: 32,
                         color: AppColors.primary,
-                        width: 2,
                       ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 16,
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Weight Verification',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter the weight of the laundry bag before scanning.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _weightController,
+                      readOnly: isLocked,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Weight',
+                        labelStyle: const TextStyle(color: AppColors.primary),
+                        hintText: '0.00',
+                        prefixIcon: const Icon(Icons.monitor_weight_outlined),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isLocked)
+                              IconButton(
+                                onPressed: () {
+                                  context.read<OrderBloc>().add(
+                                    UnlockWeightReading(),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.refresh,
+                                  color: Colors.orange,
+                                ),
+                                tooltip: 'Retry',
+                              ),
+                            IconButton(
+                              onPressed: () {
+                                if (!isLocked) {
+                                  context.read<OrderBloc>().add(
+                                    LockWeightReading(),
+                                  );
+                                }
+                              },
+                              icon: Icon(
+                                isLocked ? Icons.lock : Icons.lock_open,
+                                color: isLocked ? Colors.green : Colors.grey,
+                              ),
+                              tooltip: isLocked ? 'Locked' : 'Lock Weight',
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(right: 12.0, left: 4),
+                              child: Text(
+                                'kg',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
 
         const SizedBox(height: 24),

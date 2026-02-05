@@ -8,8 +8,6 @@ import '../../../../core/injection_container.dart';
 import '../../domain/entities/get_orders_entity.dart';
 import '../../../order/domain/entities/accept_order_params.dart';
 import '../../../order/presentation/bloc/order_bloc.dart';
-import '../../../order/presentation/bloc/order_event.dart';
-import '../../../order/presentation/bloc/order_state.dart';
 import '../bloc/home_bloc.dart';
 import '../home_router.dart';
 

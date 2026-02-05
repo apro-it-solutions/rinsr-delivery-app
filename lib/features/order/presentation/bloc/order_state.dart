@@ -1,6 +1,4 @@
-import 'package:equatable/equatable.dart';
-import 'package:geolocator/geolocator.dart';
-import '../../../home/domain/entities/get_orders_entity.dart';
+part of 'order_bloc.dart';
 
 abstract class OrderState extends Equatable {
   const OrderState();
@@ -20,9 +18,13 @@ class OrderLoaded extends OrderState {
   final double? distanceInMeters;
   final String? locationError;
   final bool isLocationLoading;
+  final double? weight;
+  final bool isWeightLocked;
 
   const OrderLoaded(
     this.order, {
+    this.weight,
+    this.isWeightLocked = false,
     this.currentLocation,
     this.distanceInMeters,
     this.locationError,
@@ -36,6 +38,8 @@ class OrderLoaded extends OrderState {
     distanceInMeters,
     locationError,
     isLocationLoading,
+    weight,
+    isWeightLocked,
   ];
 
   OrderLoaded copyWith({
@@ -44,6 +48,8 @@ class OrderLoaded extends OrderState {
     double? distanceInMeters,
     String? locationError,
     bool? isLocationLoading,
+    double? weight,
+    bool? isWeightLocked,
   }) {
     return OrderLoaded(
       order ?? this.order,
@@ -51,6 +57,8 @@ class OrderLoaded extends OrderState {
       distanceInMeters: distanceInMeters ?? this.distanceInMeters,
       locationError: locationError ?? this.locationError,
       isLocationLoading: isLocationLoading ?? this.isLocationLoading,
+      weight: weight ?? this.weight,
+      isWeightLocked: isWeightLocked ?? this.isWeightLocked,
     );
   }
 }

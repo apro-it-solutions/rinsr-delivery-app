@@ -79,6 +79,7 @@ Order _$OrderFromJson(Map<String, dynamic> json) => Order(
   pickedUpDeliveryPartnerId: json['picked_up_delivery_partner'] as String?,
   orderReturnedDeliveryPartner:
       json['order_returned_delivery_partner'] as String?,
+  barcode: json['barcode_id'] as String?,
 );
 
 Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
@@ -117,4 +118,5 @@ Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
   'delivery_updates': instance.deliveryUpdates,
   'picked_up_delivery_partner': instance.pickedUpDeliveryPartnerId,
   'order_returned_delivery_partner': instance.orderReturnedDeliveryPartner,
+  'barcode_id': instance.barcode,
 };

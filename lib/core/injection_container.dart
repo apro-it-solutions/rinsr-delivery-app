@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
 import '../features/auth/data/repositories/auth_repositories_impl.dart';
 import '../features/auth/domain/usecases/resend_otp.dart';
 import '../features/auth/domain/usecases/send_otp.dart';
@@ -108,14 +109,18 @@ Future<void> init() async {
 
   //! BLoCs
   // HomeBloc MUST be a lazySingleton so that FCMService and UI share the same instance
-  sl.registerLazySingleton(
-    () => HomeBloc(
-      getOrders: sl(),
-      acceptOrder: sl(),
-    ),
+  sl.registerLazySingleton(() => HomeBloc(getOrders: sl(), acceptOrder: sl()));
+
+  sl.registerLazySingleton<BluetoothScannerService>(
+    () => BluetoothScannerService(),
   );
 
   sl.registerFactory(
-    () => OrderBloc(updateOrder: sl(), notifyUser: sl(), locationService: sl()),
+    () => OrderBloc(
+      updateOrder: sl(),
+      notifyUser: sl(),
+      locationService: sl(),
+      bluetoothScannerService: sl(),
+    ),
   );
 }

@@ -49,6 +49,7 @@ class OrderDetailsEntity extends Equatable {
   final DeliveryUpdatesEntity? deliveryUpdates;
   final String? pickedUpDeliveryPartnerId;
   final String? orderReturnedDeliveryPartner;
+  final String? barcode;
 
   const OrderDetailsEntity({
     this.displayOrderID,
@@ -87,6 +88,7 @@ class OrderDetailsEntity extends Equatable {
     this.deliveryUpdates,
     this.pickedUpDeliveryPartnerId,
     this.orderReturnedDeliveryPartner,
+    this.barcode,
   });
 
   @override
@@ -123,6 +125,7 @@ class OrderDetailsEntity extends Equatable {
     planId,
     photoPath,
     cancelReason,
+    barcode,
   ];
 
   // Getters to maintain compatibility with UI

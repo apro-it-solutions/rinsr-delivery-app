@@ -5,6 +5,7 @@ import '../../../../core/constants/constants.dart';
 import '../../../../core/constants/status_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/get_orders_entity.dart';
+import '../../../../core/constants/enums.dart'; // Added import
 import '../bloc/home_bloc.dart';
 import '../home_router.dart';
 import '../widgets/order_list_item.dart';
@@ -26,9 +27,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     AppConstants.kAgentId,
   );
   final Set<String> _skippedOrderIds = {};
-  String? _pendingNavigationOrderId;
-  // Track the currently open transit order to prevent double navigation
-  String? _activeTransitOrderId;
+  bool _isNavigationActive = false;
   StreamSubscription? _orderSubscription;
 
   @override
@@ -36,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     context.read<HomeBloc>().add(GetOrdersEvent(agentId: deliveryAgentId));
-
     // Listen for new orders
     _orderSubscription = FCMService.orderStream.listen((data) {
       if (mounted) {
@@ -60,50 +58,84 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  bool _shouldRedirectForOrder(OrderDetailsEntity order) {
+    // 0. Terminal State check: If delivered/cancelled/completed, NEVER redirect
+    // This overrides any history in delivery_updates
+    switch (order.computedStatus) {
+      case OrderStatus.delivered:
+      case OrderStatus.serviceCompleted:
+      case OrderStatus.cancelled:
+      case OrderStatus.ready:
+      case OrderStatus.washing:
+      case OrderStatus.processing:
+        return false;
+      default:
+        break;
+    }
+
+    // Check if the current agent is the active delivery partner
+    if (order.deliveryUpdates?.currentDeliveryPartnerId != deliveryAgentId) {
+      return false;
+    }
+
+    // Check picked_up updates
+    final pickedUp = order.deliveryUpdates?.pickedUp ?? [];
+    if (pickedUp.isNotEmpty) {
+      // Sort by timestamp if needed, but assuming last is latest
+      final lastUpdate = pickedUp.last;
+      if (lastUpdate.status == 'accepted_for_pickup' ||
+          lastUpdate.status == 'picked_up') {
+        return true;
+      }
+    }
+
+    // Check delivered updates (which include return flows)
+    final delivered = order.deliveryUpdates?.delivered ?? [];
+    if (delivered.isNotEmpty) {
+      final lastUpdate = delivered.last;
+      if (lastUpdate.status == 'accepted_for_return' ||
+          lastUpdate.status == 'vendor_returning' ||
+          lastUpdate.status == 'out_for_delivery') {
+        return true;
+      }
+    }
+
+    // Also check main status as fallback for transit
+    if (order.computedStatus.agentStatus == DeliveryAgentStatus.transit) {
+      return true;
+    }
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       child: BlocListener<HomeBloc, HomeState>(
         listener: (context, state) {
-          if (state is HomeAcceptOrder) {
-            _pendingNavigationOrderId = state.order.orderId;
-          }
-
           if (state is HomeLoaded) {
-            // Check for pending navigation for accepted order
-            if (_pendingNavigationOrderId != null) {
-              final targetOrder = state.allOrders
-                  .where((o) => o.orderId == _pendingNavigationOrderId)
-                  .firstOrNull;
-              if (targetOrder != null) {
-                _pendingNavigationOrderId = null;
-                Navigator.pushNamed(
-                  context,
-                  HomeRouter.orderDetail,
-                  arguments: targetOrder,
-                );
-                return; // Prioritize this navigation
-              }
-            }
-
-            // Check for Transit order to force navigation
-            final transitOrder = state.allOrders.where((o) {
-              return o.computedStatus.agentStatus ==
-                  DeliveryAgentStatus.transit;
+            // Find any order that requires immediate attention/redirection
+            final activeOrder = state.allOrders.where((order) {
+              return _shouldRedirectForOrder(order);
             }).firstOrNull;
 
-            if (transitOrder != null &&
+            if (activeOrder != null &&
                 context.mounted &&
-                _activeTransitOrderId != transitOrder.orderId) {
-              _activeTransitOrderId = transitOrder.orderId;
-
+                !_isNavigationActive) {
+              _isNavigationActive = true;
               Navigator.pushNamed(
                 context,
                 HomeRouter.orderDetail,
-                arguments: transitOrder,
+                arguments: activeOrder,
               ).then((_) {
-                _activeTransitOrderId = null;
+                if (context.mounted) {
+                  _isNavigationActive = false;
+                  // Refresh when coming back to ensure list is up to date
+                  context.read<HomeBloc>().add(
+                    GetOrdersEvent(agentId: deliveryAgentId),
+                  );
+                }
               });
             }
           }

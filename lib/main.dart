@@ -57,6 +57,7 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => OrderBloc(
+            bluetoothScannerService: di.sl(),
             updateOrder: di.sl(),
             notifyUser: di.sl(),
             locationService: di.sl(), // Inject LocationService

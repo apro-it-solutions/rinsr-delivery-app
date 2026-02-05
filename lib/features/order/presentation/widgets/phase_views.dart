@@ -6,12 +6,12 @@ import '../../../../core/utils/app_alerts.dart';
 import '../../../../core/utils/launcher_utils.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../bloc/order_bloc.dart';
-import '../bloc/order_event.dart';
 import '../widgets/order_completed_view.dart';
 import '../widgets/order_info_card.dart';
 import '../widgets/order_navigation_step.dart';
 import '../widgets/order_pickup_form.dart';
 import '../widgets/order_alert_banner.dart';
+import '../pages/barcode_scanner_screen.dart';
 
 class PhaseAView extends StatefulWidget {
   final OrderDetailsEntity order;
@@ -440,7 +440,26 @@ class _PhaseDViewState extends State<PhaseDView> {
             buttonText: 'Confirm Pickup',
             onButtonPressed: widget.isEnabled
                 ? () async {
-                    context.read<OrderBloc>().add(StartDelivery());
+                    // 1. Scan Barcode
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BarcodeScannerScreen(),
+                      ),
+                    );
+
+                    // 2. Validate Barcode
+                    if (result != null && context.mounted) {
+                      print('hello${widget.order.barcode}');
+                      if (result == widget.order.barcode) {
+                        context.read<OrderBloc>().add(StartDelivery());
+                      } else {
+                        AppAlerts.showErrorSnackBar(
+                          context: context,
+                          message: 'Scanned barcode does not match order!',
+                        );
+                      }
+                    }
                   }
                 : () {
                     AppAlerts.showErrorSnackBar(
