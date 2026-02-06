@@ -63,7 +63,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       //   return order.hubAddress; // Deliver to Hub
 
       // Phase D: Hub -> User
-      case OrderStatus.ready:
+      case OrderStatus.readyToPickupFromHub:
         return order.hubAddress; // Pickup from Hub (for delivery)
       case OrderStatus.outForDelivery:
         return order.userAddress; // Deliver to User

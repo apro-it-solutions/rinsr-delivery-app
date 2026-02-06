@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../../../core/constants/enums.dart';
+import '../../../../core/constants/enums.dart'; // Added import
+import '../../../order/domain/entities/accept_order_response_entity.dart';
 
 class GetOrdersEntity extends Equatable {
   final bool? success;
@@ -263,6 +264,81 @@ class OrderDetailsEntity extends Equatable {
       photoPath: photoPath ?? this.photoPath,
       cancelReason: cancelReason ?? this.cancelReason,
       displayOrderID: displayOrderID ?? this.displayOrderID,
+    );
+  }
+
+  factory OrderDetailsEntity.fromAcceptOrder(
+    AcceptOrderDetailsEntity acceptOrder, {
+    int? displayOrderID,
+  }) {
+    return OrderDetailsEntity(
+      displayOrderID: displayOrderID,
+      pickupTimeSlot: acceptOrder.pickupTimeSlot,
+      pickupAddress: acceptOrder.pickupAddress,
+      deliveryPartnerIds: acceptOrder.deliveryPartnerIds
+          ?.map((e) => e.toString())
+          .toList(),
+      orderId: acceptOrder.orderId,
+      userId: acceptOrder.userId != null
+          ? UserIdEntity(id: acceptOrder.userId)
+          : null, // Basic mapping as userId is String in acceptOrder
+      pickupDate: acceptOrder.pickupDate,
+      serviceId: acceptOrder.serviceId,
+      addons: acceptOrder.addons,
+      totalWeightKg: acceptOrder.totalWeightKg,
+      totalNoOfClothes: acceptOrder.totalNoOfClothes,
+      heavyItems: acceptOrder.heavyItems,
+      deliveryDate: acceptOrder.deliveryDate,
+      estimateTotalPrice: acceptOrder.estimateTotalPrice,
+      basePrice: acceptOrder.basePrice,
+      addonPrice: acceptOrder.addonPrice,
+      totalPrice: acceptOrder.totalPrice,
+      status: acceptOrder.status,
+      orderType: acceptOrder.orderType,
+      paymentStatus: acceptOrder.paymentStatus,
+      vendorStatus: acceptOrder.vendorStatus,
+      pickupNotificationSent: acceptOrder.pickupNotificationSent,
+      createdAt: acceptOrder.createdAt,
+      updatedAt: acceptOrder.updatedAt,
+      v: acceptOrder.v,
+      hubId: acceptOrder.hubId,
+      vendorId: acceptOrder.vendorId,
+      subscriptionSnapshot: acceptOrder.subscriptionSnapshot,
+      subscriptionId: acceptOrder.subscriptionId != null
+          ? SubscriptionIdEntity(id: acceptOrder.subscriptionId)
+          : null,
+      planId: acceptOrder.planId != null
+          ? PlanIdEntity(id: acceptOrder.planId)
+          : null,
+      deliveryUpdates: acceptOrder.deliveryUpdates != null
+          ? DeliveryUpdatesEntity(
+              currentDeliveryPartnerId:
+                  acceptOrder.deliveryUpdates!.currentDeliveryPartnerId,
+              delivered: acceptOrder.deliveryUpdates!.delivered
+                  ?.map(
+                    (e) => DeliveryUpdateItemEntity(
+                      status: e.status, // Assuming dyamic or similar structure
+                      deliveryId: e.deliveryId, // Need to verify fields
+                      timestamp: e.timestamp,
+                      id: e.id,
+                    ),
+                  )
+                  .toList()
+                  .cast<DeliveryUpdateItemEntity>(), // Verify cast
+              pickedUp: acceptOrder.deliveryUpdates!.pickedUp
+                  ?.map(
+                    (e) => DeliveryUpdateItemEntity(
+                      status: e.status,
+                      deliveryId: e.deliveryId,
+                      timestamp: e.timestamp,
+                      id: e.id,
+                    ),
+                  )
+                  .toList(),
+            )
+          : null,
+      pickedUpDeliveryPartnerId: acceptOrder.pickedUpDeliveryPartner
+          ?.toString(),
     );
   }
 }

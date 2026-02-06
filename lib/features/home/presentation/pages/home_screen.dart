@@ -5,7 +5,7 @@ import '../../../../core/constants/constants.dart';
 import '../../../../core/constants/status_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/get_orders_entity.dart';
-import '../../../../core/constants/enums.dart'; // Added import
+import '../../../../core/constants/enums.dart';
 import '../bloc/home_bloc.dart';
 import '../home_router.dart';
 import '../widgets/order_list_item.dart';
@@ -58,54 +58,75 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  bool _shouldRedirectForOrder(OrderDetailsEntity order) {
-    // 0. Terminal State check: If delivered/cancelled/completed, NEVER redirect
-    // This overrides any history in delivery_updates
-    switch (order.computedStatus) {
-      case OrderStatus.delivered:
-      case OrderStatus.serviceCompleted:
-      case OrderStatus.cancelled:
-      case OrderStatus.ready:
-      case OrderStatus.washing:
-      case OrderStatus.processing:
-        return false;
-      default:
-        break;
+  bool _isOrderTerminal(OrderStatus status) {
+    return status == OrderStatus.cancelled ||
+        status == OrderStatus.delivered ||
+        status == OrderStatus.serviceCompleted ||
+        status == OrderStatus.processing || // Added
+        status == OrderStatus.washing || // Added
+        status == OrderStatus.ready; // Added
+  }
+
+  bool hasAccepted(OrderDetailsEntity order) {
+    final updates = order.deliveryUpdates;
+    if (updates == null) return false;
+
+    final agentId = deliveryAgentId;
+
+    return (updates.pickedUp?.any(
+              (u) =>
+                  u.deliveryId == agentId &&
+                  (u.status == 'accepted_for_pickup' ||
+                      u.status == 'picked_up'),
+            ) ??
+            false) ||
+        (updates.delivered?.any(
+              (u) =>
+                  u.deliveryId == agentId && u.status == 'accepted_for_return',
+            ) ??
+            false);
+  }
+
+  bool isAgentFlowComplete(OrderDetailsEntity order) {
+    // Check Phase D completion (Delivery to User)
+    final updates = order.deliveryUpdates;
+    if (updates != null) {
+      final agentId = deliveryAgentId;
+      final isPhaseDComplete =
+          updates.delivered?.any(
+            (u) =>
+                u.deliveryId == agentId &&
+                (u.status == 'delivered' || u.status == 'service_completed'),
+          ) ??
+          false;
+      if (isPhaseDComplete) return true;
     }
 
-    // Check if the current agent is the active delivery partner
+    return false;
+  }
+
+  bool shouldRedirect(OrderDetailsEntity order) {
+    // 1. Order-level hard stop
+    if (_isOrderTerminal(order.computedStatus)) {
+      return false;
+    }
+    // 2. Must be current agent
     if (order.deliveryUpdates?.currentDeliveryPartnerId != deliveryAgentId) {
       return false;
     }
 
-    // Check picked_up updates
-    final pickedUp = order.deliveryUpdates?.pickedUp ?? [];
-    if (pickedUp.isNotEmpty) {
-      // Sort by timestamp if needed, but assuming last is latest
-      final lastUpdate = pickedUp.last;
-      if (lastUpdate.status == 'accepted_for_pickup' ||
-          lastUpdate.status == 'picked_up') {
-        return true;
-      }
+    // 3. Must have accepted
+    if (!hasAccepted(order)) {
+      return false;
     }
 
-    // Check delivered updates (which include return flows)
-    final delivered = order.deliveryUpdates?.delivered ?? [];
-    if (delivered.isNotEmpty) {
-      final lastUpdate = delivered.last;
-      if (lastUpdate.status == 'accepted_for_return' ||
-          lastUpdate.status == 'vendor_returning' ||
-          lastUpdate.status == 'out_for_delivery') {
-        return true;
-      }
+    // 4. Must not have completed own flow
+    if (isAgentFlowComplete(order)) {
+      return false;
     }
 
-    // Also check main status as fallback for transit
-    if (order.computedStatus.agentStatus == DeliveryAgentStatus.transit) {
-      return true;
-    }
-
-    return false;
+    // 5. Lock into flow
+    return true;
   }
 
   @override
@@ -117,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (state is HomeLoaded) {
             // Find any order that requires immediate attention/redirection
             final activeOrder = state.allOrders.where((order) {
-              return _shouldRedirectForOrder(order);
+              return shouldRedirect(order);
             }).firstOrNull;
 
             if (activeOrder != null &&

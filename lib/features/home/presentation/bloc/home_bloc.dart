@@ -111,15 +111,41 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       emit(HomeLoading());
       final result = await acceptOrder(event.params);
       result.fold((l) => emit(HomeError(message: l.message)), (r) {
-        emit(HomeAcceptOrder(order: r));
-        emit(
-          HomeLoaded(
-            allOrders: currentState.allOrders,
-            filteredOrders: currentState.filteredOrders,
-            selectedFilter: currentState.selectedFilter,
-            agentId: currentState.agentId,
-          ),
-        );
+        if (r.order != null) {
+          final processedOrder = OrderDetailsEntity.fromAcceptOrder(r.order!);
+          final updatedOrders = List<OrderDetailsEntity>.from(
+            currentState.allOrders,
+          );
+
+          final index = updatedOrders.indexWhere((o) => o.orderId == r.orderId);
+          if (index != -1) {
+            updatedOrders[index] = processedOrder;
+          } else {
+            updatedOrders.insert(0, processedOrder);
+          }
+
+          emit(HomeAcceptOrder(order: r));
+          emit(
+            HomeLoaded(
+              allOrders: updatedOrders,
+              filteredOrders:
+                  updatedOrders, // Assuming filtering logic re-applies or we just refresh, but this is safer than stale
+              selectedFilter: currentState.selectedFilter,
+              agentId: currentState.agentId,
+            ),
+          );
+        } else {
+          // Fallback if order is missing in response
+          emit(HomeAcceptOrder(order: r));
+          emit(
+            HomeLoaded(
+              allOrders: currentState.allOrders,
+              filteredOrders: currentState.filteredOrders,
+              selectedFilter: currentState.selectedFilter,
+              agentId: currentState.agentId,
+            ),
+          );
+        }
       });
     }
   }
