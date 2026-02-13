@@ -1,24 +1,12 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/network/api_handler.dart';
 import '../../../../core/network/network_info.dart';
-import '../models/verify_otp/verify_otp_request_model/verify_otp_request_model.dart';
-import '../../domain/entities/resend_otp/resend_otp_request_entity.dart';
-
-import '../../domain/entities/resend_otp/resend_otp_response_entity.dart';
-
-import '../../domain/entities/send_otp/send_otp_request_entity.dart';
-
-import '../../domain/entities/send_otp/send_otp_response_entity.dart';
-
-import '../../domain/entities/verify_user/verify_user_request_entity.dart';
-
-import '../../domain/entities/verify_user/verify_user_response_entity.dart';
-
 import '../../../../core/error/failures.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../data_sources/auth_remote_datasource.dart';
-import '../models/resend_otp/resend_otp_request_model/resend_otp_request_model.dart';
-import '../models/send_otp/send_otp_request_model/send_otp_request_model.dart';
+import '../models/firebase_auth/firebase_auth_request_model.dart';
+import '../models/firebase_auth/firebase_auth_response_model.dart';
 
 class AuthRepositoriesImpl implements AuthRepository {
   final ApiHandler apiHandler;
@@ -31,44 +19,76 @@ class AuthRepositoriesImpl implements AuthRepository {
     this.remoteDataSource,
   );
   @override
-  Future<Either<Failure, ResendOtpResponseEntity>> resendOtp(
-    ResendOtpRequestEntity request,
-  ) async {
+  Future<Either<Failure, void>> loginWithPhone({
+    required String phoneNumber,
+    required Function(String, int?) codeSent,
+    required Function(String) verificationFailed,
+  }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure());
     }
 
-    return apiHandler.execute(() {
-      final model = ResendOtpRequestModel.fromEntity(request);
-      return remoteDataSource.resendOtp(model);
-    });
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto-resolution (Android only) - we can handle this if needed,
+          // but usually we wait for the user to input the code or the codeSent callback.
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          verificationFailed(e.message ?? 'Verification failed');
+        },
+        codeSent: codeSent,
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+      return const Right(null);
+    } on FirebaseAuthException catch (e) {
+      return Left(ServerFailure(message: e.message ?? 'Firebase Auth Error'));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
   }
 
   @override
-  Future<Either<Failure, SendOtpResponseEntity>> sendOtp(
-    SendOtpRequestEntity request,
-  ) async {
+  Future<Either<Failure, UserCredential>> verifyPhoneOtp({
+    required String verificationId,
+    required String smsCode,
+  }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure());
     }
 
-    return apiHandler.execute(() {
-      final model = SendOtpRequestModel.fromEntity(request);
-      return remoteDataSource.sendOtp(model);
-    });
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+      return Right(userCredential);
+    } on FirebaseAuthException catch (e) {
+      return Left(ServerFailure(message: e.message ?? 'Verification failed'));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
   }
 
   @override
-  Future<Either<Failure, VerifyUserResponseEntity>> verifyOtp(
-    VerifyOtpRequestEntity request,
-  ) async {
+  Future<Either<Failure, FirebaseAuthResponseModel>> authenticateWithBackend({
+    required String idToken,
+    String? fcmToken,
+  }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure());
     }
 
     return apiHandler.execute(() {
-      final model = VerifyOtpRequestModel.fromEntity(request);
-      return remoteDataSource.verifyOtp(model);
+      final request = FirebaseAuthRequestModel(
+        idToken: idToken,
+        fcmToken: fcmToken,
+      );
+      return remoteDataSource.firebaseAuth(request);
     });
   }
 }

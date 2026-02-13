@@ -3,9 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
 import '../features/auth/data/repositories/auth_repositories_impl.dart';
-import '../features/auth/domain/usecases/resend_otp.dart';
-import '../features/auth/domain/usecases/send_otp.dart';
-import '../features/auth/domain/usecases/verify_otp.dart';
+import '../features/auth/domain/usecases/authenticate_with_backend.dart';
+import '../features/auth/domain/usecases/login_with_phone.dart';
+import '../features/auth/domain/usecases/verify_phone_otp.dart';
 import '../features/home/data/repositories/home_repository_impl.dart';
 import '../features/home/domain/usecases/get_orders.dart';
 import '../features/profile/data/data_sources/profile_remote_data_source.dart';
@@ -14,6 +14,7 @@ import '../core/network/network_info.dart';
 
 import '../features/auth/data/data_sources/auth_remote_datasource.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
+import '../features/auth/presentation/bloc/auth_bloc.dart';
 import '../features/auth/presentation/bloc/auth_external_services.dart';
 import '../features/home/data/data_sources/home_remote_data_source.dart';
 import '../features/home/domain/repositories/home_repository.dart';
@@ -64,9 +65,9 @@ Future<void> init() async {
   //! ---------------------------
 
   // Use Cases
-  sl.registerLazySingleton(() => SendOtp(sl()));
-  sl.registerLazySingleton(() => VerifyOtp(sl()));
-  sl.registerLazySingleton(() => ResendOtp(sl()));
+  sl.registerLazySingleton(() => LoginWithPhone(sl()));
+  sl.registerLazySingleton(() => VerifyPhoneOtp(sl()));
+  sl.registerLazySingleton(() => AuthenticateWithBackend(sl()));
   sl.registerLazySingleton(() => GetOrders(sl()));
   sl.registerLazySingleton(() => UpdateOrder(sl()));
   sl.registerLazySingleton(() => GetAgentDetails(sl()));
@@ -110,6 +111,15 @@ Future<void> init() async {
   //! BLoCs
   // HomeBloc MUST be a lazySingleton so that FCMService and UI share the same instance
   sl.registerLazySingleton(() => HomeBloc(getOrders: sl(), acceptOrder: sl()));
+
+  sl.registerFactory(
+    () => AuthBloc(
+      externalServices: sl(),
+      loginWithPhone: sl(),
+      verifyPhoneOtp: sl(),
+      authenticateWithBackend: sl(),
+    ),
+  );
 
   sl.registerLazySingleton<BluetoothScannerService>(
     () => BluetoothScannerService(),

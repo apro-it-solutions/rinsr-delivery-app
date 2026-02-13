@@ -43,14 +43,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => ProfileBloc(getAgentDetails: di.sl()),
         ),
-        BlocProvider(
-          create: (context) => AuthBloc(
-            externalServices: di.sl(),
-            sendOtp: di.sl(),
-            verifyOtp: di.sl(),
-            resendOtp: di.sl(),
-          ),
-        ),
+        BlocProvider(create: (context) => di.sl<AuthBloc>()),
         BlocProvider(
           create: (context) =>
               HomeBloc(getOrders: di.sl(), acceptOrder: di.sl()),

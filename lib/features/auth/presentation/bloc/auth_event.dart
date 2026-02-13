@@ -52,3 +52,27 @@ class AuthTimerTicked extends AuthEvent {
   @override
   List<Object> get props => [duration];
 }
+
+class AuthErrorEvent extends AuthEvent {
+  final String message;
+
+  const AuthErrorEvent(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class AuthCodeSentEvent extends AuthEvent {
+  final String verificationId;
+  final int? resendToken;
+  final String phoneNumber;
+
+  const AuthCodeSentEvent({
+    required this.verificationId,
+    this.resendToken,
+    required this.phoneNumber,
+  });
+
+  @override
+  List<Object> get props => [verificationId, resendToken ?? 0, phoneNumber];
+}

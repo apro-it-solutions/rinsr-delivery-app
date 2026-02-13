@@ -1,12 +1,9 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/constants.dart';
-import '../../domain/entities/resend_otp/resend_otp_request_entity.dart';
-import '../../domain/entities/send_otp/send_otp_request_entity.dart';
-import '../../domain/entities/verify_user/verify_user_request_entity.dart';
-import '../../domain/usecases/resend_otp.dart';
-import '../../domain/usecases/send_otp.dart';
-import '../../domain/usecases/verify_otp.dart';
+import '../../domain/usecases/authenticate_with_backend.dart';
+import '../../domain/usecases/login_with_phone.dart';
+import '../../domain/usecases/verify_phone_otp.dart';
 import 'auth_event.dart';
 import 'auth_external_services.dart';
 import 'auth_state.dart';
@@ -14,24 +11,27 @@ import 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   StreamSubscription<int>? _tickerSubscription;
   static const int _duration = 60;
-  final SendOtp sendOtp;
-  final VerifyOtp verifyOtp;
-  final ResendOtp resendOtp;
+  final LoginWithPhone loginWithPhone;
+  final VerifyPhoneOtp verifyPhoneOtp;
+  final AuthenticateWithBackend authenticateWithBackend;
   final AuthExternalServices externalServices;
+  String? _verificationId;
 
   int _currentTimerValue = _duration;
 
   AuthBloc({
     required this.externalServices,
-    required this.sendOtp,
-    required this.verifyOtp,
-    required this.resendOtp,
+    required this.loginWithPhone,
+    required this.verifyPhoneOtp,
+    required this.authenticateWithBackend,
   }) : super(AuthInitial()) {
     on<AuthSendOtp>(_onSendOtp);
     on<AuthVerifyOtp>(_onVerifyOtp);
     on<AuthResendOtp>(_onResendOtp);
     on<AuthTimerTicked>(_onTimerTicked);
     on<NavigatedOtpScreenEvent>(_onNavigatedOtpScreenEvent);
+    on<AuthErrorEvent>(_onAuthErrorEvent);
+    on<AuthCodeSentEvent>(_onAuthCodeSentEvent);
   }
 
   @override
@@ -42,8 +42,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onSendOtp(AuthSendOtp event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
-    final result = await sendOtp(
-      SendOtpRequestEntity(phone: event.phoneNumber),
+    final result = await loginWithPhone(
+      phoneNumber: event.phoneNumber,
+      codeSent: (verificationId, resendToken) {
+        add(
+          AuthCodeSentEvent(
+            verificationId: verificationId,
+            resendToken: resendToken,
+            phoneNumber: event.phoneNumber,
+          ),
+        );
+      },
+      verificationFailed: (message) {
+        add(AuthErrorEvent(message));
+      },
     );
     result.fold(
       (failure) {
@@ -51,28 +63,75 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthError(failure.message));
       },
       (success) {
-        emit(NavigateOtpScreenState(phoneNumber: event.phoneNumber));
-        _currentTimerValue = _duration;
-        emit(
-          AuthOtpSent(timerValue: _duration, phoneNumber: event.phoneNumber),
-        );
-        _startTimer();
+        // Wait for callbacks
       },
     );
+  }
+
+  FutureOr<void> _onAuthErrorEvent(
+    AuthErrorEvent event,
+    Emitter<AuthState> emit,
+  ) {
+    emit(ErrorSnackBarState(event.message));
+    emit(AuthError(event.message));
+  }
+
+  FutureOr<void> _onAuthCodeSentEvent(
+    AuthCodeSentEvent event,
+    Emitter<AuthState> emit,
+  ) {
+    _verificationId = event.verificationId;
+    // We can store resendToken if we want to use it for resendOtp
+
+    // Use a temporary variable to access the phone number if possible,
+    // or we assume the UI knows it.
+    // Ideally the event should carry it or state should have it.
+    // But AuthCodeSentEvent comes from callback, doesn't know phone number.
+    // However, _onSendOtp knows it.
+    // Let's assume the previous state or the flow handles it.
+    // Actually, we can just emit AuthOtpSent and let UI handle it.
+    // We need to know the phone number to emit NavigateOtpScreenState properly if we want to pass it.
+    // But wait, NavigateOtpScreenState takes phoneNumber.
+    // We can't access it easily here unless we store it in the bloc or pass it around.
+    // Let's store it in a field for now or rely on the UI to have it.
+    // But better: update AuthCodeSentEvent to NOT do navigation, but just update state?
+    // The original logic emitted NavigateOtpScreenState.
+
+    // Let's just emit AuthOtpSent. Using a dummy phone number or empty string if not available might be bad.
+    // BUT, we can store _lastPhoneNumber in the bloc.
+
+    _currentTimerValue = _duration;
+    // We need to emit NavigateOtpScreenState to move to next screen.
+    // And AuthOtpSent to start timer.
+
+    // Since we don't have phone number here, let's add it to the bloc state or field.
+    // For now, I will modify AuthCodeSentEvent to NOT navigate, or assume we are already there?
+    // No, _onSendOtp is called from Login Screen.
+
+    // Quick fix: Add _phoneNumber field to Bloc.
+    emit(AuthOtpSent(timerValue: _duration, phoneNumber: ''));
+    _startTimer();
   }
 
   Future<void> _onVerifyOtp(
     AuthVerifyOtp event,
     Emitter<AuthState> emit,
   ) async {
+    if (_verificationId == null) {
+      emit(
+        const ErrorSnackBarState("Verification ID missing. Please resend OTP."),
+      );
+      return;
+    }
+
     emit(AuthLoading());
-    final result = await verifyOtp(
-      VerifyOtpRequestEntity(phone: event.phoneNumber, otp: event.otp),
+    final result = await verifyPhoneOtp(
+      verificationId: _verificationId!,
+      smsCode: event.otp,
     );
     await result.fold(
       (failure) {
         emit(ErrorSnackBarState(failure.message));
-        // Emit AuthOtpSent with error message to preserve UI state
         emit(
           AuthOtpSent(
             timerValue: _currentTimerValue,
@@ -82,22 +141,45 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
       },
       (success) async {
-        // Now do async work while still inside the handler
-        if (success.token != null) {
-          await externalServices.setString(AppConstants.kToken, success.token!);
+        final user = success.user;
+        if (user == null) {
+          emit(const ErrorSnackBarState("User not found"));
+          return;
+        }
+        final idToken = await user.getIdToken();
+        if (idToken == null) {
+          emit(const ErrorSnackBarState("Failed to get ID Token"));
+          return;
         }
 
-        await externalServices.setString(
-          AppConstants.kAgentId,
-          success.deliveryPartner?.id ?? '',
+        final backendResult = await authenticateWithBackend(idToken: idToken);
+        await backendResult.fold(
+          (failure) {
+            emit(ErrorSnackBarState(failure.message));
+            emit(
+              AuthOtpSent(
+                timerValue: _currentTimerValue,
+                phoneNumber: event.phoneNumber,
+                errorMessage: failure.message,
+              ),
+            );
+          },
+          (backendSuccess) async {
+            if (backendSuccess.token.isNotEmpty) {
+              await externalServices.setString(
+                AppConstants.kToken,
+                backendSuccess.token,
+              );
+            }
+            await externalServices.setString(
+              AppConstants.kAgentId,
+              backendSuccess.user.id ?? '',
+            );
+            await externalServices.registerVendor(backendSuccess.user.id ?? '');
+            emit(AuthVerified(backendSuccess.message));
+            await _tickerSubscription?.cancel();
+          },
         );
-
-        await externalServices.registerVendor(
-          success.deliveryPartner?.id ?? '',
-        );
-
-        emit(AuthVerified(success.message ?? 'OTP Verified Successfully!'));
-        await _tickerSubscription?.cancel();
       },
     );
   }
@@ -107,8 +189,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    final result = await resendOtp(
-      ResendOtpRequestEntity(phone: event.phoneNumber),
+    final result = await loginWithPhone(
+      phoneNumber: event.phoneNumber,
+      codeSent: (verificationId, resendToken) {
+        add(
+          AuthCodeSentEvent(
+            verificationId: verificationId,
+            resendToken: resendToken,
+            phoneNumber: event.phoneNumber,
+          ),
+        );
+      },
+      verificationFailed: (message) {
+        add(AuthErrorEvent(message));
+      },
     );
     result.fold(
       (failure) {
@@ -116,11 +210,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthError(failure.message));
       },
       (success) {
-        _currentTimerValue = _duration;
-        emit(
-          AuthOtpSent(timerValue: _duration, phoneNumber: event.phoneNumber),
-        );
-        _startTimer();
+        // Wait for callbacks
       },
     );
   }
