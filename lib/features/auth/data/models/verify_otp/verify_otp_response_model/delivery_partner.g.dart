@@ -20,6 +20,8 @@ DeliveryPartner _$DeliveryPartnerFromJson(Map<String, dynamic> json) =>
           .toList(),
       isActive: json['is_active'] as bool?,
       totalCompletedOrders: (json['total_completed_orders'] as num?)?.toInt(),
+      currentDayStats: json['current_day_stats'] as Map<String, dynamic>?,
+      pricePerKilometre: json['price_per_kilometre'] as num?,
       createdAt: json['createdAt'] == null
           ? null
           : DateTime.parse(json['createdAt'] as String),
@@ -39,6 +41,8 @@ Map<String, dynamic> _$DeliveryPartnerToJson(DeliveryPartner instance) =>
       'services': instance.services,
       'is_active': instance.isActive,
       'total_completed_orders': instance.totalCompletedOrders,
+      'current_day_stats': instance.currentDayStats,
+      'price_per_kilometre': instance.pricePerKilometre,
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
       '__v': instance.v,

@@ -28,6 +28,12 @@ class DeliveryPartner extends DeliveryPartnerEntity {
   @JsonKey(name: 'total_completed_orders')
   final int? totalCompletedOrders;
   @override
+  @JsonKey(name: 'current_day_stats')
+  final Map<String, dynamic>? currentDayStats;
+  @override
+  @JsonKey(name: 'price_per_kilometre')
+  final num? pricePerKilometre; 
+  @override
   final DateTime? createdAt;
   @override
   final DateTime? updatedAt;
@@ -43,6 +49,8 @@ class DeliveryPartner extends DeliveryPartnerEntity {
     this.services,
     this.isActive,
     this.totalCompletedOrders,
+    this.currentDayStats,
+    this.pricePerKilometre,
     this.createdAt,
     this.updatedAt,
     this.v,
@@ -54,6 +62,8 @@ class DeliveryPartner extends DeliveryPartnerEntity {
          services: services,
          isActive: isActive,
          totalCompletedOrders: totalCompletedOrders,
+         currentDayStats: currentDayStats,
+         pricePerKilometre: pricePerKilometre,
          createdAt: createdAt,
          updatedAt: updatedAt,
        );
@@ -73,6 +83,8 @@ class DeliveryPartner extends DeliveryPartnerEntity {
     List<String>? services,
     bool? isActive,
     int? totalCompletedOrders,
+    Map<String, dynamic>? currentDayStats,
+    num? pricePerKilometre,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
@@ -86,6 +98,8 @@ class DeliveryPartner extends DeliveryPartnerEntity {
       services: services ?? this.services,
       isActive: isActive ?? this.isActive,
       totalCompletedOrders: totalCompletedOrders ?? this.totalCompletedOrders,
+      currentDayStats: currentDayStats ?? this.currentDayStats,
+      pricePerKilometre: pricePerKilometre ?? this.pricePerKilometre,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       v: v ?? this.v,

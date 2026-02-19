@@ -3,10 +3,10 @@ import '../../../../core/network/api_handler.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/error/failures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../domain/entities/verify_user/verify_user_response_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../data_sources/auth_remote_datasource.dart';
 import '../models/firebase_auth/firebase_auth_request_model.dart';
-import '../models/firebase_auth/firebase_auth_response_model.dart';
 
 class AuthRepositoriesImpl implements AuthRepository {
   final ApiHandler apiHandler;
@@ -30,7 +30,7 @@ class AuthRepositoriesImpl implements AuthRepository {
 
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
+        phoneNumber: '+91$phoneNumber',
         verificationCompleted: (PhoneAuthCredential credential) async {
           // Auto-resolution (Android only) - we can handle this if needed,
           // but usually we wait for the user to input the code or the codeSent callback.
@@ -75,19 +75,15 @@ class AuthRepositoriesImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, FirebaseAuthResponseModel>> authenticateWithBackend({
+  Future<Either<Failure, VerifyUserResponseEntity>> authenticateWithBackend({
     required String idToken,
-    String? fcmToken,
   }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure());
     }
 
     return apiHandler.execute(() {
-      final request = FirebaseAuthRequestModel(
-        idToken: idToken,
-        fcmToken: fcmToken,
-      );
+      final request = FirebaseAuthRequestModel(idToken: idToken);
       return remoteDataSource.firebaseAuth(request);
     });
   }

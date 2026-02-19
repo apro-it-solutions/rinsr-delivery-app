@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class VerifyUserResponseEntity extends Equatable {
   final bool? success;
   final String? message;
+  final bool? isNewUser;
   final String? token;
   final DeliveryPartnerEntity? deliveryPartner;
 
@@ -10,11 +11,18 @@ class VerifyUserResponseEntity extends Equatable {
     this.success,
     this.message,
     this.token,
+    this.isNewUser,
     this.deliveryPartner,
   });
 
   @override
-  List<Object?> get props => [success, message, token, deliveryPartner];
+  List<Object?> get props => [
+    success,
+    message,
+    token,
+    deliveryPartner,
+    isNewUser,
+  ];
 
   @override
   bool get stringify => true;
@@ -28,6 +36,8 @@ class DeliveryPartnerEntity extends Equatable {
   final List<String>? services;
   final bool? isActive;
   final int? totalCompletedOrders;
+  final Map<String, dynamic>? currentDayStats;
+  final num? pricePerKilometre;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -39,6 +49,8 @@ class DeliveryPartnerEntity extends Equatable {
     this.services,
     this.isActive,
     this.totalCompletedOrders,
+    this.currentDayStats,
+    this.pricePerKilometre,
     this.createdAt,
     this.updatedAt,
   });
@@ -52,6 +64,8 @@ class DeliveryPartnerEntity extends Equatable {
     services,
     isActive,
     totalCompletedOrders,
+    currentDayStats,
+    pricePerKilometre,
     createdAt,
     updatedAt,
   ];

@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
-import '../../data/models/firebase_auth/firebase_auth_response_model.dart';
+import '../entities/verify_user/verify_user_response_entity.dart';
 import '../repositories/auth_repository.dart';
 
 class AuthenticateWithBackend {
@@ -8,13 +8,9 @@ class AuthenticateWithBackend {
 
   AuthenticateWithBackend(this.repository);
 
-  Future<Either<Failure, FirebaseAuthResponseModel>> call({
+  Future<Either<Failure, VerifyUserResponseEntity>> call({
     required String idToken,
-    String? fcmToken,
   }) async {
-    return await repository.authenticateWithBackend(
-      idToken: idToken,
-      fcmToken: fcmToken,
-    );
+    return await repository.authenticateWithBackend(idToken: idToken);
   }
 }

@@ -2,7 +2,8 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../data/models/firebase_auth/firebase_auth_response_model.dart';
+
+import '../entities/verify_user/verify_user_response_entity.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, void>> loginWithPhone({
@@ -16,8 +17,7 @@ abstract class AuthRepository {
     required String smsCode,
   });
 
-  Future<Either<Failure, FirebaseAuthResponseModel>> authenticateWithBackend({
+  Future<Either<Failure, VerifyUserResponseEntity>> authenticateWithBackend({
     required String idToken,
-    String? fcmToken,
   });
 }

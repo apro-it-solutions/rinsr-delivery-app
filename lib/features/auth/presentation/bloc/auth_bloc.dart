@@ -81,35 +81,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) {
     _verificationId = event.verificationId;
-    // We can store resendToken if we want to use it for resendOtp
-
-    // Use a temporary variable to access the phone number if possible,
-    // or we assume the UI knows it.
-    // Ideally the event should carry it or state should have it.
-    // But AuthCodeSentEvent comes from callback, doesn't know phone number.
-    // However, _onSendOtp knows it.
-    // Let's assume the previous state or the flow handles it.
-    // Actually, we can just emit AuthOtpSent and let UI handle it.
-    // We need to know the phone number to emit NavigateOtpScreenState properly if we want to pass it.
-    // But wait, NavigateOtpScreenState takes phoneNumber.
-    // We can't access it easily here unless we store it in the bloc or pass it around.
-    // Let's store it in a field for now or rely on the UI to have it.
-    // But better: update AuthCodeSentEvent to NOT do navigation, but just update state?
-    // The original logic emitted NavigateOtpScreenState.
-
-    // Let's just emit AuthOtpSent. Using a dummy phone number or empty string if not available might be bad.
-    // BUT, we can store _lastPhoneNumber in the bloc.
-
     _currentTimerValue = _duration;
-    // We need to emit NavigateOtpScreenState to move to next screen.
-    // And AuthOtpSent to start timer.
 
-    // Since we don't have phone number here, let's add it to the bloc state or field.
-    // For now, I will modify AuthCodeSentEvent to NOT navigate, or assume we are already there?
-    // No, _onSendOtp is called from Login Screen.
-
-    // Quick fix: Add _phoneNumber field to Bloc.
-    emit(AuthOtpSent(timerValue: _duration, phoneNumber: ''));
+    emit(NavigateOtpScreenState(phoneNumber: event.phoneNumber));
+    emit(AuthOtpSent(timerValue: _duration, phoneNumber: event.phoneNumber));
     _startTimer();
   }
 
@@ -119,7 +94,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     if (_verificationId == null) {
       emit(
-        const ErrorSnackBarState("Verification ID missing. Please resend OTP."),
+        const ErrorSnackBarState('Verification ID missing. Please resend OTP.'),
       );
       return;
     }
@@ -143,12 +118,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (success) async {
         final user = success.user;
         if (user == null) {
-          emit(const ErrorSnackBarState("User not found"));
+          emit(const ErrorSnackBarState('User not found'));
           return;
         }
         final idToken = await user.getIdToken();
         if (idToken == null) {
-          emit(const ErrorSnackBarState("Failed to get ID Token"));
+          emit(const ErrorSnackBarState('Failed to get ID Token'));
           return;
         }
 
@@ -165,18 +140,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             );
           },
           (backendSuccess) async {
-            if (backendSuccess.token.isNotEmpty) {
+            if (backendSuccess.token?.isNotEmpty ?? false) {
               await externalServices.setString(
                 AppConstants.kToken,
-                backendSuccess.token,
+                backendSuccess.token!,
               );
             }
             await externalServices.setString(
               AppConstants.kAgentId,
-              backendSuccess.user.id ?? '',
+              backendSuccess.deliveryPartner?.id ?? '',
             );
-            await externalServices.registerVendor(backendSuccess.user.id ?? '');
-            emit(AuthVerified(backendSuccess.message));
+            await externalServices.registerVendor(
+              backendSuccess.deliveryPartner?.id ?? '',
+            );
+            emit(AuthVerified(backendSuccess.message ?? ''));
             await _tickerSubscription?.cancel();
           },
         );

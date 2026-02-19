@@ -170,6 +170,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             }
 
             if (state is HomeLoaded) {
+              print(
+                'DEBUG: HomeLoaded state: ${state.filteredOrders.length} orders',
+              );
               final visibleOrders = state.filteredOrders.where((o) {
                 return !_skippedOrderIds.contains(o.orderId);
               }).toList();

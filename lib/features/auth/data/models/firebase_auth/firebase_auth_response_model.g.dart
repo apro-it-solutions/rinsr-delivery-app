@@ -9,10 +9,14 @@ part of 'firebase_auth_response_model.dart';
 FirebaseAuthResponseModel _$FirebaseAuthResponseModelFromJson(
   Map<String, dynamic> json,
 ) => FirebaseAuthResponseModel(
-  message: json['message'] as String,
-  isNewUser: json['isNewUser'] as bool,
-  token: json['token'] as String,
-  user: DeliveryPartner.fromJson(json['user'] as Map<String, dynamic>),
+  message: json['message'] as String?,
+  isNewUser: json['isNewUser'] as bool? ?? false,
+  token: json['token'] as String?,
+  deliveryPartner: json['deliveryPartner'] == null
+      ? null
+      : DeliveryPartner.fromJson(
+          json['deliveryPartner'] as Map<String, dynamic>,
+        ),
 );
 
 Map<String, dynamic> _$FirebaseAuthResponseModelToJson(
@@ -21,5 +25,5 @@ Map<String, dynamic> _$FirebaseAuthResponseModelToJson(
   'message': instance.message,
   'isNewUser': instance.isNewUser,
   'token': instance.token,
-  'user': instance.user,
+  'deliveryPartner': instance.deliveryPartner,
 };
