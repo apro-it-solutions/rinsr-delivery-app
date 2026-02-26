@@ -55,6 +55,7 @@ extension OrderStatusExtension on OrderStatus {
       // PRE-PICKUP PHASE
       case OrderStatus.scheduled:
       case OrderStatus.readyToPickupFromHub:
+      case OrderStatus.serviceCompleted:
         return DeliveryAgentStatus.accepted;
 
       // PICKUP PHASE
@@ -72,7 +73,6 @@ extension OrderStatusExtension on OrderStatus {
 
       // DELIVERED/PROCESSING PHASE
       case OrderStatus.ready:
-      case OrderStatus.serviceCompleted:
       case OrderStatus.vendorPickedUp:
       case OrderStatus.vendorReturning:
       case OrderStatus.processing:

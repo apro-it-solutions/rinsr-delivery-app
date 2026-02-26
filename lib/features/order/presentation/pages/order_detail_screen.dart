@@ -56,11 +56,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       // case OrderStatus.vendorPickedUp:
       //   return order.vendorAddress; // Deliver to Vendor
 
-      // Phase C: Vendor -> Hub (Removed from Agent Flow)
-      // case OrderStatus.serviceCompleted:
-      //   return order.vendorAddress; // Pickup from Vendor
-      // case OrderStatus.vendorReturning:
-      //   return order.hubAddress; // Deliver to Hub
+      // Phase C: Vendor -> Hub
+      case OrderStatus.serviceCompleted:
+        return order.vendorAddress; // Pickup from Vendor
+      case OrderStatus.vendorReturning:
+        return order.hubAddress; // Deliver to Hub
 
       // Phase D: Hub -> User
       case OrderStatus.readyToPickupFromHub:
@@ -195,11 +195,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               locationWidget: locationWidget,
               distance: distanceInMeters,
             );
+          case OrderStatus.serviceCompleted:
+          case OrderStatus.vendorReturning:
+            return PhaseCView(
+              order: order,
+              isEnabled: isEnabled,
+              locationWidget: locationWidget,
+              distance: distanceInMeters,
+            );
           case OrderStatus.ready:
           case OrderStatus.vendorPickedUp:
           case OrderStatus.washing:
-          case OrderStatus.serviceCompleted:
-          case OrderStatus.vendorReturning:
             // These phases are now handled by external logistics, show as processing/completed to agent
             return OrderCompletedView(order: order);
           case OrderStatus.outForDelivery:

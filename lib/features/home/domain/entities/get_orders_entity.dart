@@ -317,14 +317,14 @@ class OrderDetailsEntity extends Equatable {
               delivered: acceptOrder.deliveryUpdates!.delivered
                   ?.map(
                     (e) => DeliveryUpdateItemEntity(
-                      status: e.status, // Assuming dyamic or similar structure
-                      deliveryId: e.deliveryId, // Need to verify fields
+                      status: e.status,
+                      deliveryId: e.deliveryId,
                       timestamp: e.timestamp,
                       id: e.id,
                     ),
                   )
                   .toList()
-                  .cast<DeliveryUpdateItemEntity>(), // Verify cast
+                  .cast<DeliveryUpdateItemEntity>(),
               pickedUp: acceptOrder.deliveryUpdates!.pickedUp
                   ?.map(
                     (e) => DeliveryUpdateItemEntity(

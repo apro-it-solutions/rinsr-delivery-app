@@ -11,7 +11,7 @@ class DeliveryUpdates extends AcceptDeliveryUpdatesEntity {
   @JsonKey(name: 'picked_up')
   final List<PickedUp>? pickedUp;
   @override
-  final List<dynamic>? delivered;
+  final List<PickedUp>? delivered;
   @override
   @JsonKey(name: 'current_delivery_partner_id')
   final String? currentDeliveryPartnerId;
@@ -34,7 +34,7 @@ class DeliveryUpdates extends AcceptDeliveryUpdatesEntity {
 
   DeliveryUpdates copyWith({
     List<PickedUp>? pickedUp,
-    List<dynamic>? delivered,
+    List<PickedUp>? delivered,
     String? currentDeliveryPartnerId,
   }) {
     return DeliveryUpdates(

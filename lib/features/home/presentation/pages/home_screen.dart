@@ -61,7 +61,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _isOrderTerminal(OrderStatus status) {
     return status == OrderStatus.cancelled ||
         status == OrderStatus.delivered ||
-        status == OrderStatus.serviceCompleted ||
         status == OrderStatus.processing || // Added
         status == OrderStatus.washing || // Added
         status == OrderStatus.ready; // Added

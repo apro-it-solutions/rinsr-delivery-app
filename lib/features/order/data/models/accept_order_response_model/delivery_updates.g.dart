@@ -11,7 +11,9 @@ DeliveryUpdates _$DeliveryUpdatesFromJson(Map<String, dynamic> json) =>
       pickedUp: (json['picked_up'] as List<dynamic>?)
           ?.map((e) => PickedUp.fromJson(e as Map<String, dynamic>))
           .toList(),
-      delivered: json['delivered'] as List<dynamic>?,
+      delivered: (json['delivered'] as List<dynamic>?)
+          ?.map((e) => PickedUp.fromJson(e as Map<String, dynamic>))
+          .toList(),
       currentDeliveryPartnerId: json['current_delivery_partner_id'] as String?,
     );
 

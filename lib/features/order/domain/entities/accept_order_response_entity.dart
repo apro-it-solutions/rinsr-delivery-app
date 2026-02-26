@@ -126,7 +126,7 @@ class AcceptOrderDetailsEntity extends Equatable {
 
 class AcceptDeliveryUpdatesEntity extends Equatable {
   final String? currentDeliveryPartnerId;
-  final List<dynamic>? delivered;
+  final List<DeliveryUpdateItemEntity>? delivered;
   final List<DeliveryUpdateItemEntity>? pickedUp;
 
   const AcceptDeliveryUpdatesEntity({
