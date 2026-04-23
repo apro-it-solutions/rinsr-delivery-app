@@ -4,8 +4,6 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Camera permission is required to scan barcodes.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Rinsr Delivery Partner</string>
 	<key>CFBundleExecutable</key>
@@ -46,11 +44,15 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to take photos of the order.</string>
+	<string>We need access to your camera to take photos of the order and scan barcodes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to select photos of the order.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We need access to your location to verify order pickup and delivery.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need access to your location in the background to track order pickup and delivery progress.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need access to your location in the background to track order pickup and delivery progress.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>googlechromes</string>
