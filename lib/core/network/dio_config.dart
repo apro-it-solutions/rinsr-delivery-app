@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:rinsr_delivery_partner/features/auth/presentation/auth_router.dart';
 import '../routing/router.dart';
 
@@ -67,8 +68,12 @@ class DioConfig {
         },
       ),
     );
-    // Optional: add interceptors for logging, auth, etc.
-    dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
+    if (kDebugMode) {
+      // Optional: add interceptors for logging, auth, etc.
+      dio.interceptors.add(
+        LogInterceptor(responseBody: true, requestBody: true),
+      );
+    }
 
     return dio;
   }
