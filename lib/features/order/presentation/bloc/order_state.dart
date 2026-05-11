@@ -20,6 +20,7 @@ class OrderLoaded extends OrderState {
   final bool isLocationLoading;
   final double? weight;
   final bool isWeightLocked;
+  final bool isSubmitting;
 
   const OrderLoaded(
     this.order, {
@@ -29,6 +30,7 @@ class OrderLoaded extends OrderState {
     this.distanceInMeters,
     this.locationError,
     this.isLocationLoading = false,
+    this.isSubmitting = false,
   });
 
   @override
@@ -40,6 +42,7 @@ class OrderLoaded extends OrderState {
     isLocationLoading,
     weight,
     isWeightLocked,
+    isSubmitting,
   ];
 
   OrderLoaded copyWith({
@@ -50,6 +53,7 @@ class OrderLoaded extends OrderState {
     bool? isLocationLoading,
     double? weight,
     bool? isWeightLocked,
+    bool? isSubmitting,
   }) {
     return OrderLoaded(
       order ?? this.order,
@@ -59,6 +63,7 @@ class OrderLoaded extends OrderState {
       isLocationLoading: isLocationLoading ?? this.isLocationLoading,
       weight: weight ?? this.weight,
       isWeightLocked: isWeightLocked ?? this.isWeightLocked,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }
 }

@@ -241,14 +241,26 @@ class Order extends OrderDetailsEntity {
     String? cancelReason,
     String? orderId,
     int? displayOrderID,
+    DeliveryUpdatesEntity? deliveryUpdates,
+    String? pickedUpDeliveryPartnerId,
+    String? orderReturnedDeliveryPartner,
+    String? barcode,
   }) {
+    // Use is-checks instead of `as` so a parent-class instance falls back to
+    // the existing value rather than throwing at runtime. Callers that want
+    // to actually update one of these fields must pass the JSON-serializable
+    // subclass; an entity instance is treated as "no change".
     return Order(
-      pickupTimeSlot: pickupTimeSlot as PickupTimeSlot? ?? this.pickupTimeSlot,
-      pickupAddress: pickupAddress as PickupAddress? ?? this.pickupAddress,
+      pickupTimeSlot:
+          (pickupTimeSlot is PickupTimeSlot ? pickupTimeSlot : null) ??
+          this.pickupTimeSlot,
+      pickupAddress:
+          (pickupAddress is PickupAddress ? pickupAddress : null) ??
+          this.pickupAddress,
       id: id ?? orderId ?? this.id,
-      userId: userId as UserId? ?? this.userId,
+      userId: (userId is UserId ? userId : null) ?? this.userId,
       pickupDate: pickupDate ?? this.pickupDate,
-      serviceId: serviceId as ServiceId? ?? this.serviceId,
+      serviceId: (serviceId is ServiceId ? serviceId : null) ?? this.serviceId,
       addons: addons ?? this.addons,
       totalWeightKg: totalWeightKg ?? this.totalWeightKg,
       totalNoOfClothes: totalNoOfClothes ?? this.totalNoOfClothes,
@@ -268,16 +280,28 @@ class Order extends OrderDetailsEntity {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       v: v ?? this.v,
-      hubId: hubId as HubId? ?? this.hubId,
-      vendorId: vendorId as VendorId? ?? this.vendorId,
+      hubId: (hubId is HubId ? hubId : null) ?? this.hubId,
+      vendorId: (vendorId is VendorId ? vendorId : null) ?? this.vendorId,
       subscriptionSnapshot:
-          subscriptionSnapshot as SubscriptionSnapshot? ??
+          (subscriptionSnapshot is SubscriptionSnapshot
+              ? subscriptionSnapshot
+              : null) ??
           this.subscriptionSnapshot,
-      subscriptionId: subscriptionId as SubscriptionId? ?? this.subscriptionId,
-      planId: planId as PlanId? ?? this.planId,
+      subscriptionId:
+          (subscriptionId is SubscriptionId ? subscriptionId : null) ??
+          this.subscriptionId,
+      planId: (planId is PlanId ? planId : null) ?? this.planId,
       photoPath: photoPath ?? this.photoPath,
       cancelReason: cancelReason ?? this.cancelReason,
       displayOrderID: displayOrderID ?? this.displayOrderID,
+      deliveryUpdates:
+          (deliveryUpdates is DeliveryUpdates ? deliveryUpdates : null) ??
+          this.deliveryUpdates,
+      pickedUpDeliveryPartnerId:
+          pickedUpDeliveryPartnerId ?? this.pickedUpDeliveryPartnerId,
+      orderReturnedDeliveryPartner:
+          orderReturnedDeliveryPartner ?? this.orderReturnedDeliveryPartner,
+      barcode: barcode ?? this.barcode,
     );
   }
 }

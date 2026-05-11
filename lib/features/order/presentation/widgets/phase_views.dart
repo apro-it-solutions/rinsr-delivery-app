@@ -130,30 +130,30 @@ class _PhaseAViewState extends State<PhaseAView> {
       return Column(
         children: [
           widget.locationWidget,
-          if (widget.order.hubId?.name != null) ...[
+          if (widget.order.vendorId?.companyName != null) ...[
             OrderInfoCard(
-              title: 'Hub Name',
-              content: widget.order.hubId!.name!,
+              title: 'Vendor Name',
+              content: widget.order.vendorId!.companyName!,
               icon: Icons.store,
             ),
             const SizedBox(height: 12),
           ],
-          if (widget.order.hubId?.primaryContact != null) ...[
+          if (widget.order.vendorId?.phoneNumber != null) ...[
             OrderInfoCard(
-              title: 'Hub Contact',
-              content: widget.order.hubId!.primaryContact!,
+              title: 'Vendor Contact',
+              content: widget.order.vendorId!.phoneNumber!,
               icon: Icons.phone,
               onActionTap: () => LauncherUtils.launchPhone(
                 context,
-                widget.order.hubId!.primaryContact!,
+                widget.order.vendorId!.phoneNumber!,
               ),
               actionIcon: Icons.call,
             ),
             const SizedBox(height: 12),
           ],
           OrderNavigationStep(
-            title: 'Deliver to Hub',
-            address: widget.order.hubAddress,
+            title: 'Deliver to Vendor',
+            address: widget.order.vendorAddress,
             buttonText: 'Confirm Drop',
             onButtonPressed: widget.isEnabled
                 ? () async {
@@ -171,7 +171,7 @@ class _PhaseAViewState extends State<PhaseAView> {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, widget.order.hubAddress),
+                LauncherUtils.launchMaps(context, widget.order.vendorAddress),
           ),
         ],
       );
@@ -208,17 +208,17 @@ class PhaseBView extends StatelessWidget {
       return Column(
         children: [
           locationWidget,
-          if (order.hubId?.name != null) ...[
+          if (order.vendorId?.companyName != null) ...[
             OrderInfoCard(
-              title: 'Hub Name',
-              content: order.hubId!.name!,
+              title: 'Vendor Name',
+              content: order.vendorId!.companyName!,
               icon: Icons.store,
             ),
             const SizedBox(height: 12),
           ],
           OrderNavigationStep(
-            title: 'Pickup from Hub',
-            address: order.hubAddress,
+            title: 'Pickup from vendor',
+            address: order.vendorAddress,
             buttonText: 'Confirm Pickup',
             onButtonPressed: isEnabled
                 ? () async {
@@ -231,7 +231,7 @@ class PhaseBView extends StatelessWidget {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, order.hubAddress),
+                LauncherUtils.launchMaps(context, order.vendorAddress),
           ),
         ],
       );
@@ -357,17 +357,17 @@ class PhaseCView extends StatelessWidget {
       return Column(
         children: [
           locationWidget,
-          if (order.hubId?.name != null) ...[
+          if (order.vendorId?.companyName != null) ...[
             OrderInfoCard(
-              title: 'Hub Name',
-              content: order.hubId!.name!,
+              title: 'Vendor Name',
+              content: order.vendorId!.companyName!,
               icon: Icons.store,
             ),
             const SizedBox(height: 12),
           ],
           OrderNavigationStep(
-            title: 'Return to Hub',
-            address: order.hubAddress,
+            title: 'Return to vendor',
+            address: order.vendorAddress,
             buttonText: 'Confirm Drop',
             onButtonPressed: isEnabled
                 ? () async {
@@ -380,7 +380,7 @@ class PhaseCView extends StatelessWidget {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, order.hubAddress),
+                LauncherUtils.launchMaps(context, order.vendorAddress),
           ),
         ],
       );
@@ -426,17 +426,17 @@ class _PhaseDViewState extends State<PhaseDView> {
       return Column(
         children: [
           widget.locationWidget,
-          if (widget.order.hubId?.name != null) ...[
+          if (widget.order.vendorId?.companyName != null) ...[
             OrderInfoCard(
-              title: 'Hub Name',
-              content: widget.order.hubId!.name!,
+              title: 'Vendor Name',
+              content: widget.order.vendorId!.companyName!,
               icon: Icons.store,
             ),
             const SizedBox(height: 12),
           ],
           OrderNavigationStep(
-            title: 'Pickup from Hub',
-            address: widget.order.hubAddress,
+            title: 'Pickup from Vendor',
+            address: widget.order.vendorAddress,
             buttonText: 'Confirm Pickup',
             onButtonPressed: widget.isEnabled
                 ? () async {
@@ -468,7 +468,7 @@ class _PhaseDViewState extends State<PhaseDView> {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, widget.order.hubAddress),
+                LauncherUtils.launchMaps(context, widget.order.vendorAddress),
           ),
         ],
       );

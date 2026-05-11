@@ -129,16 +129,36 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 );
               }
             },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: BlocBuilder<OrderBloc, OrderState>(
-                builder: (context, state) {
-                  final currentOrder = state is OrderLoaded
-                      ? state.order
-                      : widget.order;
-                  return _buildOrderContent(context, currentOrder);
-                },
-              ),
+            child: BlocBuilder<OrderBloc, OrderState>(
+              builder: (context, state) {
+                final currentOrder = state is OrderLoaded
+                    ? state.order
+                    : widget.order;
+                final isSubmitting =
+                    state is OrderLoaded && state.isSubmitting;
+                return Stack(
+                  children: [
+                    SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: _buildOrderContent(context, currentOrder),
+                    ),
+                    if (isSubmitting)
+                      const Positioned.fill(
+                        child: AbsorbPointer(
+                          absorbing: true,
+                          child: ColoredBox(
+                            color: Color(0x80000000),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ),

@@ -275,7 +275,7 @@ class _SingleOrderViewState extends State<SingleOrderView> {
                 ? (widget.order.userName.isNotEmpty
                       ? widget.order.userName
                       : 'Customer')
-                : (widget.order.hubId?.name ?? 'Hub'),
+                : (widget.order.vendorName),
             isPickup: true,
             isLast: false,
           ),
@@ -286,7 +286,7 @@ class _SingleOrderViewState extends State<SingleOrderView> {
                 ? (widget.order.hubAddress)
                 : (widget.order.userAddress),
             name: isPickupFlow
-                ? (widget.order.hubId?.name ?? 'Hub')
+                ? (widget.order.vendorName)
                 : (widget.order.userName),
             isPickup: false,
             isLast: true,

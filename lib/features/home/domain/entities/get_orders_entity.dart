@@ -157,7 +157,7 @@ class OrderDetailsEntity extends Equatable {
           return OrderStatus.ready;
         case 'washing':
           return OrderStatus.washing;
-        case 'ready_to_pickup_from_hub':
+        case 'ready_to_pickup_from_vendor':
           return OrderStatus.readyToPickupFromHub;
         case 'out_for_delivery':
           return OrderStatus.outForDelivery;
@@ -186,7 +186,7 @@ class OrderDetailsEntity extends Equatable {
   }
 
   String get userAddress => pickupAddress?.addressLine ?? '';
-  String get hubAddress => hubId?.location ?? '';
+  String get hubAddress => vendorId?.location ?? '';
   String get vendorAddress => vendorId?.location ?? '';
   String get userName => userId?.name ?? '';
   String get userPhone => userId?.phone ?? '';
@@ -228,6 +228,10 @@ class OrderDetailsEntity extends Equatable {
     String? photoPath,
     String? cancelReason,
     int? displayOrderID,
+    DeliveryUpdatesEntity? deliveryUpdates,
+    String? pickedUpDeliveryPartnerId,
+    String? orderReturnedDeliveryPartner,
+    String? barcode,
   }) {
     return OrderDetailsEntity(
       pickupTimeSlot: pickupTimeSlot ?? this.pickupTimeSlot,
@@ -264,6 +268,12 @@ class OrderDetailsEntity extends Equatable {
       photoPath: photoPath ?? this.photoPath,
       cancelReason: cancelReason ?? this.cancelReason,
       displayOrderID: displayOrderID ?? this.displayOrderID,
+      deliveryUpdates: deliveryUpdates ?? this.deliveryUpdates,
+      pickedUpDeliveryPartnerId:
+          pickedUpDeliveryPartnerId ?? this.pickedUpDeliveryPartnerId,
+      orderReturnedDeliveryPartner:
+          orderReturnedDeliveryPartner ?? this.orderReturnedDeliveryPartner,
+      barcode: barcode ?? this.barcode,
     );
   }
 

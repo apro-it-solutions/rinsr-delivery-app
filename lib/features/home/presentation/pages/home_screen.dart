@@ -71,19 +71,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (updates == null) return false;
 
     final agentId = deliveryAgentId;
+    final status = order.computedStatus;
 
-    return (updates.pickedUp?.any(
-              (u) =>
-                  u.deliveryId == agentId &&
-                  (u.status == 'accepted_for_pickup' ||
-                      u.status == 'picked_up'),
-            ) ??
-            false) ||
-        (updates.delivered?.any(
-              (u) =>
-                  u.deliveryId == agentId && u.status == 'accepted_for_return',
-            ) ??
-            false);
+    // Return leg: the partner has to explicitly accept the return delivery
+    // before we can lock them into the detail screen. The earlier
+    // pickup-leg acceptance does not count here.
+    final isReturnLeg =
+        status == OrderStatus.readyToPickupFromHub ||
+        status == OrderStatus.outForDelivery;
+    if (isReturnLeg) {
+      return updates.delivered?.any(
+            (u) =>
+                u.deliveryId == agentId && u.status == 'accepted_for_return',
+          ) ??
+          false;
+    }
+
+    // Pickup leg (scheduled, picked_up, ...): require a pickup acceptance.
+    return updates.pickedUp?.any(
+          (u) =>
+              u.deliveryId == agentId &&
+              (u.status == 'accepted_for_pickup' || u.status == 'picked_up'),
+        ) ??
+        false;
   }
 
   bool isAgentFlowComplete(OrderDetailsEntity order) {

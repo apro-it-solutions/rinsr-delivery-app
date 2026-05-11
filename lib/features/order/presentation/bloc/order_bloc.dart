@@ -62,8 +62,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
@@ -74,8 +76,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           ),
         );
         result.fold(
-          (failure) =>
-              emit(const OrderError('Failed to update pickup details')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update pickup details'));
+          },
           (response) => emit(
             OrderUpdated(
               currentOrder.copyWith(

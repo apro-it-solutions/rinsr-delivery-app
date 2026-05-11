@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../data/models/get_orders_model/delivery_updates.dart';
 import '../../domain/usecases/get_orders.dart';
 import '../../../order/domain/entities/accept_order_response_entity.dart';
 
@@ -33,6 +34,15 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     result.fold((l) => emit(HomeError(message: l.message)), (r) {
       final userOrders =
           r.orders?.where((order) {
+            // Only surface orders that a vendor has already accepted.
+            // Until vendor_id is populated (and vendor_status leaves
+            // 'awaiting_vendor'), the order isn't actionable for the
+            // delivery partner and shouldn't appear in their list.
+            final vendorAccepted =
+                order.vendorId != null &&
+                order.vendorStatus != 'awaiting_vendor';
+            if (!vendorAccepted) return false;
+
             final isUnassigned =
                 order.pickedUpDeliveryPartnerId == null &&
                 order.orderReturnedDeliveryPartner == null;
@@ -112,16 +122,65 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final result = await acceptOrder(event.params);
       result.fold((l) => emit(HomeError(message: l.message)), (r) {
         if (r.order != null) {
-          final processedOrder = OrderDetailsEntity.fromAcceptOrder(r.order!);
           final updatedOrders = List<OrderDetailsEntity>.from(
             currentState.allOrders,
           );
+          final accept = r.order!;
 
           final index = updatedOrders.indexWhere((o) => o.orderId == r.orderId);
           if (index != -1) {
-            updatedOrders[index] = processedOrder;
+            // Merge the accept response into the existing list entry so
+            // populated nested objects (userId.name/phone, hubId, pickupAddress,
+            // serviceId, etc.) are preserved. The accept endpoint returns
+            // user_id as a bare string, so blindly replacing would drop name
+            // and phone, leaving the detail screen blank.
+            final existing = updatedOrders[index];
+
+            // Order.copyWith downcasts deliveryUpdates to the JSON model
+            // subclass, so we must build that subclass (not the bare entity)
+            // when forwarding the accept response.
+            final acceptUpdates = accept.deliveryUpdates;
+            final mergedUpdates = acceptUpdates == null
+                ? existing.deliveryUpdates
+                : DeliveryUpdates(
+                    currentDeliveryPartnerId:
+                        acceptUpdates.currentDeliveryPartnerId,
+                    delivered: acceptUpdates.delivered
+                        ?.map(
+                          (e) => DeliveryUpdateItem(
+                            status: e.status,
+                            deliveryId: e.deliveryId,
+                            timestamp: e.timestamp,
+                            id: e.id,
+                          ),
+                        )
+                        .toList(),
+                    pickedUp: acceptUpdates.pickedUp
+                        ?.map(
+                          (e) => DeliveryUpdateItem(
+                            status: e.status,
+                            deliveryId: e.deliveryId,
+                            timestamp: e.timestamp,
+                            id: e.id,
+                          ),
+                        )
+                        .toList(),
+                  );
+
+            updatedOrders[index] = existing.copyWith(
+              status: accept.status,
+              vendorStatus: accept.vendorStatus,
+              paymentStatus: accept.paymentStatus,
+              deliveryUpdates: mergedUpdates,
+              pickedUpDeliveryPartnerId: accept.pickedUpDeliveryPartner
+                  ?.toString(),
+              // Hub / vendor may be newly assigned by the accept call.
+              hubId: accept.hubId ?? existing.hubId,
+              vendorId: accept.vendorId ?? existing.vendorId,
+              updatedAt: accept.updatedAt,
+            );
           } else {
-            updatedOrders.insert(0, processedOrder);
+            updatedOrders.insert(0, OrderDetailsEntity.fromAcceptOrder(accept));
           }
 
           emit(HomeAcceptOrder(order: r));
