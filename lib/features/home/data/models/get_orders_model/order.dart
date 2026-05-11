@@ -7,6 +7,8 @@ import 'pickup_address.dart';
 import 'pickup_time_slot.dart';
 import 'plan_id.dart';
 import 'service_id.dart';
+import 'service_item.dart';
+import 'service_line.dart';
 import 'subscription_id.dart';
 import 'subscription_snapshot.dart';
 import 'user_id.dart';
@@ -125,6 +127,17 @@ class Order extends OrderDetailsEntity {
   @JsonKey(name: 'barcode_id')
   final String? barcode;
 
+  @override
+  @JsonKey(name: 'pricing_type')
+  final String? pricingType;
+
+  @override
+  final List<ServiceLine>? services;
+
+  @override
+  @JsonKey(name: 'selected_clothing_items')
+  final List<ServiceItem>? selectedClothingItems;
+
   const Order({
     this.displayOrderID,
     this.pickupTimeSlot,
@@ -162,6 +175,9 @@ class Order extends OrderDetailsEntity {
     this.pickedUpDeliveryPartnerId,
     this.orderReturnedDeliveryPartner,
     this.barcode,
+    this.pricingType,
+    this.services,
+    this.selectedClothingItems,
   }) : super(
          orderReturnedDeliveryPartner: orderReturnedDeliveryPartner,
          pickedUpDeliveryPartnerId: pickedUpDeliveryPartnerId,
@@ -199,6 +215,9 @@ class Order extends OrderDetailsEntity {
          cancelReason: cancelReason,
          displayOrderID: displayOrderID,
          barcode: barcode,
+         pricingType: pricingType,
+         services: services,
+         selectedClothingItems: selectedClothingItems,
        );
 
   factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
@@ -245,6 +264,9 @@ class Order extends OrderDetailsEntity {
     String? pickedUpDeliveryPartnerId,
     String? orderReturnedDeliveryPartner,
     String? barcode,
+    String? pricingType,
+    List<ServiceLineEntity>? services,
+    List<ServiceItemEntity>? selectedClothingItems,
   }) {
     // Use is-checks instead of `as` so a parent-class instance falls back to
     // the existing value rather than throwing at runtime. Callers that want
@@ -302,6 +324,14 @@ class Order extends OrderDetailsEntity {
       orderReturnedDeliveryPartner:
           orderReturnedDeliveryPartner ?? this.orderReturnedDeliveryPartner,
       barcode: barcode ?? this.barcode,
+      pricingType: pricingType ?? this.pricingType,
+      services:
+          (services is List<ServiceLine> ? services : null) ?? this.services,
+      selectedClothingItems:
+          (selectedClothingItems is List<ServiceItem>
+              ? selectedClothingItems
+              : null) ??
+          this.selectedClothingItems,
     );
   }
 }

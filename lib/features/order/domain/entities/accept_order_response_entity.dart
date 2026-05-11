@@ -51,6 +51,9 @@ class AcceptOrderDetailsEntity extends Equatable {
   final dynamic pickedUpDeliveryPartner;
   final bool? pickupNotificationSent;
   final List<dynamic>? vendorIds;
+  final String? pricingType;
+  final List<ServiceLineEntity>? services;
+  final List<ServiceItemEntity>? selectedClothingItems;
 
   const AcceptOrderDetailsEntity({
     this.deliveryUpdates,
@@ -85,6 +88,9 @@ class AcceptOrderDetailsEntity extends Equatable {
     this.pickedUpDeliveryPartner,
     this.pickupNotificationSent,
     this.vendorIds,
+    this.pricingType,
+    this.services,
+    this.selectedClothingItems,
   });
 
   @override
@@ -121,6 +127,9 @@ class AcceptOrderDetailsEntity extends Equatable {
     pickedUpDeliveryPartner,
     pickupNotificationSent,
     vendorIds,
+    pricingType,
+    services,
+    selectedClothingItems,
   ];
 }
 

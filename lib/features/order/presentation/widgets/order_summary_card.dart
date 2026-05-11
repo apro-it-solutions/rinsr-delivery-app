@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
+import 'order_itemized_list.dart';
 
 class OrderSummaryCard extends StatelessWidget {
   final OrderDetailsEntity order;
@@ -85,36 +86,72 @@ class OrderSummaryCard extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildStatItem(
-                context,
-                icon: Icons.local_laundry_service_outlined,
-                label: 'Service',
-                value: order.serviceId?.name ?? 'Standard',
-              ),
-              _buildVerticalDivider(),
-              _buildStatItem(
-                context,
-                icon: Icons.scale_outlined,
-                label: 'Weight',
-                value: order.totalWeightKg != null && order.totalWeightKg != ''
-                    ? '${(order.totalWeightKg?.contains('kg') ?? false) ? order.totalWeightKg : '${order.totalWeightKg} kg'}'
-                    : '--',
-              ),
-              _buildVerticalDivider(),
-              _buildStatItem(
-                context,
-                icon: Icons.checkroom_outlined,
-                label: 'Items',
-                value:
-                    order.totalNoOfClothes != null &&
-                        (order.totalNoOfClothes != '')
-                    ? order.totalNoOfClothes!
-                    : '--',
-              ),
-            ],
-          ),
+          if (order.isPerPiece)
+            Row(
+              children: [
+                _buildStatItem(
+                  context,
+                  icon: Icons.local_laundry_service_outlined,
+                  label: 'Service',
+                  value: order.serviceId?.name ?? 'Standard',
+                ),
+                _buildVerticalDivider(),
+                _buildStatItem(
+                  context,
+                  icon: Icons.checkroom_outlined,
+                  label: 'Pieces',
+                  value: order.aggregatePieceCount > 0
+                      ? '${order.aggregatePieceCount}'
+                      : '--',
+                ),
+                _buildVerticalDivider(),
+                _buildStatItem(
+                  context,
+                  icon: Icons.currency_rupee,
+                  label: 'Pricing',
+                  value: 'Per Piece',
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                _buildStatItem(
+                  context,
+                  icon: Icons.local_laundry_service_outlined,
+                  label: 'Service',
+                  value: order.serviceId?.name ?? 'Standard',
+                ),
+                _buildVerticalDivider(),
+                _buildStatItem(
+                  context,
+                  icon: Icons.scale_outlined,
+                  label: 'Weight',
+                  value: order.totalWeightKg != null && order.totalWeightKg != ''
+                      ? '${(order.totalWeightKg?.contains('kg') ?? false) ? order.totalWeightKg : '${order.totalWeightKg} kg'}'
+                      : 'TBD',
+                ),
+                _buildVerticalDivider(),
+                _buildStatItem(
+                  context,
+                  icon: Icons.checkroom_outlined,
+                  label: 'Items',
+                  value:
+                      order.totalNoOfClothes != null &&
+                          (order.totalNoOfClothes != '')
+                      ? order.totalNoOfClothes!
+                      : '--',
+                ),
+              ],
+            ),
+          if (order.isPerPiece) ...[
+            const SizedBox(height: 16),
+            OrderItemizedList(
+              services: order.services,
+              fallbackItems: order.selectedClothingItems,
+              showPrices: true,
+            ),
+          ],
         ],
       ),
     );

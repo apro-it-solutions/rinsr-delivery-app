@@ -178,6 +178,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
               hubId: accept.hubId ?? existing.hubId,
               vendorId: accept.vendorId ?? existing.vendorId,
               updatedAt: accept.updatedAt,
+              // Pricing / itemization may also be updated on accept.
+              pricingType: accept.pricingType ?? existing.pricingType,
+              services: accept.services ?? existing.services,
+              selectedClothingItems:
+                  accept.selectedClothingItems ?? existing.selectedClothingItems,
             );
           } else {
             updatedOrders.insert(0, OrderDetailsEntity.fromAcceptOrder(accept));

@@ -80,6 +80,13 @@ Order _$OrderFromJson(Map<String, dynamic> json) => Order(
   orderReturnedDeliveryPartner:
       json['order_returned_delivery_partner'] as String?,
   barcode: json['barcode_id'] as String?,
+  pricingType: json['pricing_type'] as String?,
+  services: (json['services'] as List<dynamic>?)
+      ?.map((e) => ServiceLine.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  selectedClothingItems: (json['selected_clothing_items'] as List<dynamic>?)
+      ?.map((e) => ServiceItem.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
@@ -119,4 +126,7 @@ Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
   'picked_up_delivery_partner': instance.pickedUpDeliveryPartnerId,
   'order_returned_delivery_partner': instance.orderReturnedDeliveryPartner,
   'barcode_id': instance.barcode,
+  'pricing_type': instance.pricingType,
+  'services': instance.services,
+  'selected_clothing_items': instance.selectedClothingItems,
 };

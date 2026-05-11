@@ -387,11 +387,14 @@ class _SingleOrderViewState extends State<SingleOrderView> {
   }
 
   Widget _buildOrderDetailsCard(BuildContext context) {
-    final itemValue = widget.order.totalNoOfClothes ?? '0';
-    final weightValue = widget.order.totalWeightKg ?? '0';
-    // Use heavy items or other field if needed
-    final hasHeavy =
-        widget.order.heavyItems != null && widget.order.heavyItems == 'yes';
+    final order = widget.order;
+    final isPerPiece = order.isPerPiece;
+    final itemCount = isPerPiece
+        ? order.aggregatePieceCount.toString()
+        : (order.totalNoOfClothes ?? '0');
+    final weightValue = order.totalWeightKg ?? '';
+    final totalPrice = order.totalPrice ?? order.estimateTotalPrice ?? 0;
+    final hasHeavy = order.heavyItems != null && order.heavyItems == 'yes';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -419,27 +422,50 @@ class _SingleOrderViewState extends State<SingleOrderView> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildDetailItem(
-                  context,
-                  Icons.local_laundry_service_outlined,
-                  'Clothes',
-                  '$itemValue Items',
+          if (isPerPiece)
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailItem(
+                    context,
+                    Icons.local_laundry_service_outlined,
+                    'Items',
+                    '$itemCount pcs',
+                  ),
                 ),
-              ),
-              Container(width: 1, height: 40, color: AppColors.dividerColor),
-              Expanded(
-                child: _buildDetailItem(
-                  context,
-                  Icons.scale_outlined,
-                  'Weight',
-                  '$weightValue Kg',
+                Container(width: 1, height: 40, color: AppColors.dividerColor),
+                Expanded(
+                  child: _buildDetailItem(
+                    context,
+                    Icons.currency_rupee,
+                    'Total',
+                    '₹$totalPrice',
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailItem(
+                    context,
+                    Icons.local_laundry_service_outlined,
+                    'Clothes',
+                    '$itemCount Items',
+                  ),
+                ),
+                Container(width: 1, height: 40, color: AppColors.dividerColor),
+                Expanded(
+                  child: _buildDetailItem(
+                    context,
+                    Icons.scale_outlined,
+                    'Weight',
+                    weightValue.isEmpty ? 'TBD at vendor' : '$weightValue Kg',
+                  ),
+                ),
+              ],
+            ),
           if (hasHeavy) ...[
             const SizedBox(height: 16),
             const Divider(color: AppColors.dividerColor),

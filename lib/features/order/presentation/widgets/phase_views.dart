@@ -115,6 +115,7 @@ class _PhaseAViewState extends State<PhaseAView> {
         );
       } else if (_currentStep == 1) {
         return OrderPickupForm(
+          order: widget.order,
           onSubmitted: (photoPath, weight, barcode) {
             context.read<OrderBloc>().add(
               SubmitPickupDetails(

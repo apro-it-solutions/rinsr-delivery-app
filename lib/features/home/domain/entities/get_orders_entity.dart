@@ -51,6 +51,9 @@ class OrderDetailsEntity extends Equatable {
   final String? pickedUpDeliveryPartnerId;
   final String? orderReturnedDeliveryPartner;
   final String? barcode;
+  final String? pricingType;
+  final List<ServiceLineEntity>? services;
+  final List<ServiceItemEntity>? selectedClothingItems;
 
   const OrderDetailsEntity({
     this.displayOrderID,
@@ -90,7 +93,32 @@ class OrderDetailsEntity extends Equatable {
     this.pickedUpDeliveryPartnerId,
     this.orderReturnedDeliveryPartner,
     this.barcode,
+    this.pricingType,
+    this.services,
+    this.selectedClothingItems,
   });
+
+  bool get isPerPiece => pricingType == 'per_piece';
+  bool get isPerWeight => pricingType == 'per_weight' || pricingType == null;
+
+  int get aggregatePieceCount {
+    if (services != null && services!.isNotEmpty) {
+      return services!.fold<int>(
+        0,
+        (sum, s) =>
+            sum +
+            (s.items?.fold<int>(0, (s2, i) => s2 + (i.quantity ?? 0)) ?? 0),
+      );
+    }
+    if (selectedClothingItems != null) {
+      return selectedClothingItems!.fold<int>(
+        0,
+        (sum, i) => sum + (i.quantity ?? 0),
+      );
+    }
+    final parsed = int.tryParse(totalNoOfClothes ?? '');
+    return parsed ?? 0;
+  }
 
   @override
   List<Object?> get props => [
@@ -127,6 +155,9 @@ class OrderDetailsEntity extends Equatable {
     photoPath,
     cancelReason,
     barcode,
+    pricingType,
+    services,
+    selectedClothingItems,
   ];
 
   // Getters to maintain compatibility with UI
@@ -232,6 +263,9 @@ class OrderDetailsEntity extends Equatable {
     String? pickedUpDeliveryPartnerId,
     String? orderReturnedDeliveryPartner,
     String? barcode,
+    String? pricingType,
+    List<ServiceLineEntity>? services,
+    List<ServiceItemEntity>? selectedClothingItems,
   }) {
     return OrderDetailsEntity(
       pickupTimeSlot: pickupTimeSlot ?? this.pickupTimeSlot,
@@ -274,6 +308,10 @@ class OrderDetailsEntity extends Equatable {
       orderReturnedDeliveryPartner:
           orderReturnedDeliveryPartner ?? this.orderReturnedDeliveryPartner,
       barcode: barcode ?? this.barcode,
+      pricingType: pricingType ?? this.pricingType,
+      services: services ?? this.services,
+      selectedClothingItems:
+          selectedClothingItems ?? this.selectedClothingItems,
     );
   }
 
@@ -349,6 +387,9 @@ class OrderDetailsEntity extends Equatable {
           : null,
       pickedUpDeliveryPartnerId: acceptOrder.pickedUpDeliveryPartner
           ?.toString(),
+      pricingType: acceptOrder.pricingType,
+      services: acceptOrder.services,
+      selectedClothingItems: acceptOrder.selectedClothingItems,
     );
   }
 }
@@ -699,4 +740,74 @@ class VendorServiceEntity extends Equatable {
 
   @override
   List<Object?> get props => [name, price];
+}
+
+class ServiceLineEntity extends Equatable {
+  final String? serviceId;
+  final String? serviceName;
+  final List<ServiceItemEntity>? items;
+  final num? subtotal;
+  final String? id;
+
+  const ServiceLineEntity({
+    this.serviceId,
+    this.serviceName,
+    this.items,
+    this.subtotal,
+    this.id,
+  });
+
+  @override
+  List<Object?> get props => [serviceId, serviceName, items, subtotal, id];
+}
+
+class ServiceItemEntity extends Equatable {
+  final String? categoryId;
+  final String? categoryName;
+  final String? itemId;
+  final String? itemName;
+  final num? pricePerPiece;
+  final num? pricePerWeight;
+  final num? avgWeightPerPiece;
+  final int? quantity;
+  final num? estimatedWeight;
+  final num? lineTotal;
+  final String? id;
+
+  const ServiceItemEntity({
+    this.categoryId,
+    this.categoryName,
+    this.itemId,
+    this.itemName,
+    this.pricePerPiece,
+    this.pricePerWeight,
+    this.avgWeightPerPiece,
+    this.quantity,
+    this.estimatedWeight,
+    this.lineTotal,
+    this.id,
+  });
+
+  num get computedLineTotal {
+    if (lineTotal != null) return lineTotal!;
+    if (pricePerPiece != null && quantity != null) {
+      return pricePerPiece! * quantity!;
+    }
+    return 0;
+  }
+
+  @override
+  List<Object?> get props => [
+    categoryId,
+    categoryName,
+    itemId,
+    itemName,
+    pricePerPiece,
+    pricePerWeight,
+    avgWeightPerPiece,
+    quantity,
+    estimatedWeight,
+    lineTotal,
+    id,
+  ];
 }

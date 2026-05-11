@@ -3,15 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/app_alerts.dart';
+import '../../../home/domain/entities/get_orders_entity.dart';
 import '../bloc/order_bloc.dart';
 import '../pages/barcode_scanner_screen.dart';
+import 'order_itemized_list.dart';
 
 class OrderPickupForm extends StatefulWidget {
+  final OrderDetailsEntity order;
   final void Function(String photoPath, String weight, String barcode)
   onSubmitted;
 
-  const OrderPickupForm({super.key, required this.onSubmitted});
+  const OrderPickupForm({
+    super.key,
+    required this.order,
+    required this.onSubmitted,
+  });
 
   @override
   State<OrderPickupForm> createState() => _OrderPickupFormState();
@@ -20,12 +28,18 @@ class OrderPickupForm extends StatefulWidget {
 class _OrderPickupFormState extends State<OrderPickupForm> {
   final ImagePicker picker = ImagePicker();
   final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _pieceCountController = TextEditingController();
   XFile? photo;
+
+  bool get _isPerPiece => widget.order.isPerPiece;
 
   @override
   void dispose() {
     _weightController.dispose();
-    context.read<OrderBloc>().add(StopWeightReading());
+    _pieceCountController.dispose();
+    if (!_isPerPiece) {
+      context.read<OrderBloc>().add(StopWeightReading());
+    }
 
     super.dispose();
   }
@@ -33,7 +47,9 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
   @override
   void initState() {
     super.initState();
-    context.read<OrderBloc>().add(StartWeightReading());
+    if (!_isPerPiece) {
+      context.read<OrderBloc>().add(StartWeightReading());
+    }
   }
 
   @override
@@ -197,8 +213,178 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
 
         const SizedBox(height: 24),
 
-        // 2. Weight Section
-        BlocConsumer<OrderBloc, OrderState>(
+        // 2. Pricing-specific verification section.
+        if (_isPerPiece) _buildPieceCountSection(context),
+        if (!_isPerPiece) _buildWeightSection(context),
+
+        const SizedBox(height: 24),
+
+        // 3. Scan & Submit Button
+        SizedBox(
+          height: 54,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              if (photo == null) {
+                AppAlerts.showErrorSnackBar(
+                  context: context,
+                  message: 'Please take a photo of the clothes',
+                );
+                return;
+              }
+
+              final String submitValue;
+              if (_isPerPiece) {
+                final countText = _pieceCountController.text.trim();
+                if (countText.isEmpty) {
+                  AppAlerts.showErrorSnackBar(
+                    context: context,
+                    message: 'Please enter the total piece count',
+                  );
+                  return;
+                }
+                submitValue = countText;
+              } else {
+                final weightText = _weightController.text.trim();
+                if (weightText.isEmpty) {
+                  AppAlerts.showErrorSnackBar(
+                    context: context,
+                    message: 'Please enter weight',
+                  );
+                  return;
+                }
+                submitValue = weightText;
+              }
+
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BarcodeScannerScreen(),
+                ),
+              );
+
+              if (result != null) {
+                widget.onSubmitted(photo!.path, submitValue, result.toString());
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shadowColor: AppColors.primary.withValues(alpha: 0.4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.qr_code_scanner, size: 24),
+            label: const Text(
+              'Scan Barcode & Finish',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPieceCountSection(BuildContext context) {
+    final expectedPieces = widget.order.aggregatePieceCount;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OrderItemizedList(
+          services: widget.order.services,
+          fallbackItems: widget.order.selectedClothingItems,
+          showPrices: false,
+        ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.checklist_rtl,
+                    size: 32,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Confirm piece count',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  expectedPieces > 0
+                      ? 'Expected: $expectedPieces. Count the bag and enter the actual number of pieces received.'
+                      : 'Count the bag and enter the actual number of pieces received.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.smallTextStyle(
+                    context,
+                  ).copyWith(color: Colors.grey.shade600, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _pieceCountController,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Total pieces',
+                    labelStyle: const TextStyle(color: AppColors.primary),
+                    hintText: '0',
+                    prefixIcon: const Icon(Icons.format_list_numbered),
+                    suffixText: 'pcs',
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeightSection(BuildContext context) {
+    return BlocConsumer<OrderBloc, OrderState>(
           listener: (context, state) {
             if (state is OrderLoaded &&
                 state.weight != null &&
@@ -335,62 +521,6 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
               ),
             );
           },
-        ),
-
-        const SizedBox(height: 24),
-
-        // 3. Scan & Submit Button
-        SizedBox(
-          height: 54,
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              // Validation
-              if (photo == null) {
-                AppAlerts.showErrorSnackBar(
-                  context: context,
-                  message: 'Please take a photo of the clothes',
-                );
-                return;
-              }
-
-              final weightText = _weightController.text.trim();
-              if (weightText.isEmpty) {
-                AppAlerts.showErrorSnackBar(
-                  context: context,
-                  message: 'Please enter weight',
-                );
-                return;
-              }
-
-              // Proceed to Scan
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BarcodeScannerScreen(),
-                ),
-              );
-
-              if (result != null) {
-                widget.onSubmitted(photo!.path, weightText, result.toString());
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shadowColor: AppColors.primary.withValues(alpha: 0.4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            icon: const Icon(Icons.qr_code_scanner, size: 24),
-            label: const Text(
-              'Scan Barcode & Finish',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      ],
-    );
+        );
   }
 }

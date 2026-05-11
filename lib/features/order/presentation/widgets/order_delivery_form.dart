@@ -13,6 +13,7 @@ import '../../../../core/constants/constants.dart'; // Added
 import '../../../../core/services/shared_preferences_service.dart'; // Added
 import '../bloc/order_bloc.dart';
 import 'order_info_card.dart';
+import 'order_itemized_list.dart';
 
 class OrderDeliveryForm extends StatefulWidget {
   final OrderDetailsEntity order;
@@ -43,6 +44,14 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
           icon: Icons.person_pin_circle,
           onActionTap: widget.onActionTap,
         ),
+        if (widget.order.isPerPiece) ...[
+          const SizedBox(height: 16),
+          OrderItemizedList(
+            services: widget.order.services,
+            fallbackItems: widget.order.selectedClothingItems,
+            showPrices: true,
+          ),
+        ],
         const SizedBox(height: 24),
         Text(
           'Proof of Delivery',

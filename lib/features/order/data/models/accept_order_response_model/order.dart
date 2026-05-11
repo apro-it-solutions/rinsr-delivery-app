@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../../../home/data/models/get_orders_model/service_item.dart';
+import '../../../../home/data/models/get_orders_model/service_line.dart';
 import '../../../domain/entities/accept_order_response_entity.dart';
 import 'delivery_updates.dart';
 import 'picked_up_delivery_partner.dart';
@@ -94,6 +96,17 @@ class Order extends AcceptOrderDetailsEntity {
   @JsonKey(name: 'picked_up_delivery_partner')
   final PickedUpDeliveryPartner? pickedUpDeliveryPartner;
 
+  @override
+  @JsonKey(name: 'pricing_type')
+  final String? pricingType;
+
+  @override
+  final List<ServiceLine>? services;
+
+  @override
+  @JsonKey(name: 'selected_clothing_items')
+  final List<ServiceItem>? selectedClothingItems;
+
   const Order({
     this.deliveryUpdates,
     this.pickupTimeSlot,
@@ -123,6 +136,9 @@ class Order extends AcceptOrderDetailsEntity {
     this.updatedAt,
     this.v,
     this.pickedUpDeliveryPartner,
+    this.pricingType,
+    this.services,
+    this.selectedClothingItems,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
