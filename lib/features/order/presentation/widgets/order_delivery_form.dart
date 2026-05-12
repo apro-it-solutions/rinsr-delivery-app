@@ -50,6 +50,7 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
             services: widget.order.services,
             fallbackItems: widget.order.selectedClothingItems,
             showPrices: true,
+            collapsible: true,
           ),
         ],
         const SizedBox(height: 24),

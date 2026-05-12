@@ -295,6 +295,7 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
           services: widget.order.services,
           fallbackItems: widget.order.selectedClothingItems,
           showPrices: false,
+          collapsible: true,
         ),
         const SizedBox(height: 16),
         Card(

@@ -7,11 +7,13 @@ import '../../../home/domain/entities/get_orders_entity.dart';
 /// Renders a per_piece order's items grouped by service. Used in the pickup
 /// checklist (showPrices false) and on the drop-off leg / order summary
 /// (showPrices true).
-class OrderItemizedList extends StatelessWidget {
+class OrderItemizedList extends StatefulWidget {
   final List<ServiceLineEntity>? services;
   final List<ServiceItemEntity>? fallbackItems;
   final bool showPrices;
   final String emptyMessage;
+  final bool collapsible;
+  final int collapsedItemLimit;
 
   const OrderItemizedList({
     super.key,
@@ -19,11 +21,22 @@ class OrderItemizedList extends StatelessWidget {
     this.fallbackItems,
     this.showPrices = false,
     this.emptyMessage = 'No items in this order.',
+    this.collapsible = false,
+    this.collapsedItemLimit = 3,
   });
 
+  @override
+  State<OrderItemizedList> createState() => _OrderItemizedListState();
+}
+
+class _OrderItemizedListState extends State<OrderItemizedList> {
+  bool _expanded = false;
+
   List<_GroupedServiceLine> _resolveGroups() {
-    if (services != null && services!.isNotEmpty) {
-      return services!
+    final services = widget.services;
+    final fallback = widget.fallbackItems;
+    if (services != null && services.isNotEmpty) {
+      return services
           .map(
             (s) => _GroupedServiceLine(
               serviceName: s.serviceName ?? 'Service',
@@ -33,16 +46,49 @@ class OrderItemizedList extends StatelessWidget {
           )
           .toList();
     }
-    if (fallbackItems != null && fallbackItems!.isNotEmpty) {
+    if (fallback != null && fallback.isNotEmpty) {
       return [
         _GroupedServiceLine(
           serviceName: 'Items',
-          items: fallbackItems!,
+          items: fallback,
           subtotal: null,
         ),
       ];
     }
     return const [];
+  }
+
+  /// Cap each group's items by the remaining quota. Groups whose quota
+  /// reaches 0 mid-way still render their header so the user can see what
+  /// is hidden, but their items are truncated.
+  List<_GroupedServiceLine> _applyCap(
+    List<_GroupedServiceLine> groups,
+    int limit,
+  ) {
+    int remaining = limit;
+    final capped = <_GroupedServiceLine>[];
+    for (final g in groups) {
+      if (remaining <= 0) {
+        capped.add(
+          _GroupedServiceLine(
+            serviceName: g.serviceName,
+            items: const [],
+            subtotal: g.subtotal,
+          ),
+        );
+        continue;
+      }
+      final take = g.items.length <= remaining ? g.items.length : remaining;
+      remaining -= take;
+      capped.add(
+        _GroupedServiceLine(
+          serviceName: g.serviceName,
+          items: g.items.sublist(0, take),
+          subtotal: g.subtotal,
+        ),
+      );
+    }
+    return capped;
   }
 
   num _aggregateTotal(List<_GroupedServiceLine> groups) {
@@ -70,7 +116,7 @@ class OrderItemizedList extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(12),
         child: Text(
-          emptyMessage,
+          widget.emptyMessage,
           style: AppTextStyles.smallTextStyle(
             context,
           ).copyWith(color: AppColors.greyText),
@@ -80,6 +126,19 @@ class OrderItemizedList extends StatelessWidget {
 
     final pieces = _aggregatePieces(groups);
     final total = _aggregateTotal(groups);
+    final totalItems = groups.fold<int>(0, (sum, g) => sum + g.items.length);
+    final shouldCollapse =
+        widget.collapsible &&
+        !_expanded &&
+        totalItems > widget.collapsedItemLimit;
+    final visibleGroups = shouldCollapse
+        ? _applyCap(groups, widget.collapsedItemLimit)
+        : groups;
+    final hiddenCount = shouldCollapse
+        ? totalItems - widget.collapsedItemLimit
+        : 0;
+    final showToggle =
+        widget.collapsible && totalItems > widget.collapsedItemLimit;
 
     return Container(
       decoration: BoxDecoration(
@@ -90,44 +149,63 @@ class OrderItemizedList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.checklist_rtl,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Order items',
-                  style: AppTextStyles.mediumTextStyle(
-                    context,
-                  ).copyWith(fontWeight: FontWeight.w700),
-                ),
-                const Spacer(),
-                Text(
-                  '$pieces ${pieces == 1 ? 'piece' : 'pieces'}',
-                  style: AppTextStyles.smallTextStyle(
-                    context,
-                  ).copyWith(color: AppColors.greyText),
-                ),
-              ],
+          InkWell(
+            onTap: showToggle
+                ? () => setState(() => _expanded = !_expanded)
+                : null,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.checklist_rtl,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Order items',
+                    style: AppTextStyles.mediumTextStyle(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '· $pieces ${pieces == 1 ? 'piece' : 'pieces'}',
+                    style: AppTextStyles.smallTextStyle(
+                      context,
+                    ).copyWith(color: AppColors.greyText),
+                  ),
+                  const Spacer(),
+                  if (showToggle) ...[
+                    Text(
+                      _expanded ? 'View less' : 'View more ($hiddenCount)',
+                      style: AppTextStyles.smallTextStyle(context).copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
           const Divider(height: 1),
-          for (final group in groups) ...[
+          for (final group in visibleGroups) ...[
             _ServiceHeader(name: group.serviceName),
             for (final item in group.items)
-              _ItemRow(item: item, showPrices: showPrices),
-            if (showPrices && group.subtotal != null) ...[
+              _ItemRow(item: item, showPrices: widget.showPrices),
+            if (widget.showPrices && group.subtotal != null && !shouldCollapse)
               _SubtotalRow(label: 'Subtotal', amount: group.subtotal!),
-              const Divider(height: 1),
-            ] else
-              const Divider(height: 1),
+            const Divider(height: 1),
           ],
-          if (showPrices)
+          if (widget.showPrices && !shouldCollapse)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
               child: Row(

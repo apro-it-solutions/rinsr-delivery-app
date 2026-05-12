@@ -86,75 +86,45 @@ class OrderSummaryCard extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
-          if (order.isPerPiece)
-            Row(
-              children: [
-                _buildStatItem(
-                  context,
-                  icon: Icons.local_laundry_service_outlined,
-                  label: 'Service',
-                  value: order.serviceId?.name ?? 'Standard',
-                ),
-                _buildVerticalDivider(),
-                _buildStatItem(
-                  context,
-                  icon: Icons.checkroom_outlined,
-                  label: 'Pieces',
-                  value: order.aggregatePieceCount > 0
-                      ? '${order.aggregatePieceCount}'
-                      : '--',
-                ),
-                _buildVerticalDivider(),
-                _buildStatItem(
-                  context,
-                  icon: Icons.currency_rupee,
-                  label: 'Pricing',
-                  value: 'Per Piece',
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                _buildStatItem(
-                  context,
-                  icon: Icons.local_laundry_service_outlined,
-                  label: 'Service',
-                  value: order.serviceId?.name ?? 'Standard',
-                ),
-                _buildVerticalDivider(),
-                _buildStatItem(
-                  context,
-                  icon: Icons.scale_outlined,
-                  label: 'Weight',
-                  value: order.totalWeightKg != null && order.totalWeightKg != ''
-                      ? '${(order.totalWeightKg?.contains('kg') ?? false) ? order.totalWeightKg : '${order.totalWeightKg} kg'}'
-                      : 'TBD',
-                ),
-                _buildVerticalDivider(),
-                _buildStatItem(
-                  context,
-                  icon: Icons.checkroom_outlined,
-                  label: 'Items',
-                  value:
-                      order.totalNoOfClothes != null &&
-                          (order.totalNoOfClothes != '')
-                      ? order.totalNoOfClothes!
-                      : '--',
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              _buildStatItem(
+                context,
+                icon: Icons.local_laundry_service_outlined,
+                label: 'Service',
+                value: order.serviceId?.name ?? 'Standard',
+              ),
+              _buildVerticalDivider(),
+              _buildStatItem(
+                context,
+                icon: Icons.checkroom_outlined,
+                label: 'Quantity',
+                value: _quantityValue(order),
+              ),
+            ],
+          ),
           if (order.isPerPiece) ...[
             const SizedBox(height: 16),
             OrderItemizedList(
               services: order.services,
               fallbackItems: order.selectedClothingItems,
               showPrices: true,
+              collapsible: true,
             ),
           ],
         ],
       ),
     );
+  }
+
+  String _quantityValue(OrderDetailsEntity order) {
+    if (order.isPerPiece) {
+      final pieces = order.aggregatePieceCount;
+      if (pieces > 0) return '$pieces pcs';
+    }
+    final raw = order.totalNoOfClothes;
+    if (raw != null && raw.isNotEmpty) return '$raw pcs';
+    return '--';
   }
 
   Widget _buildVerticalDivider() {
