@@ -2,7 +2,7 @@ name: rinsr_delivery_partner
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.0+2
+version: 1.0.0+3
 
 environment:
   sdk: ^3.9.2
@@ -38,6 +38,9 @@ dependencies:
   mobile_scanner: ^7.1.4
   flutter_blue_plus: ^2.1.0
   firebase_auth: ^6.1.4
+  path_provider: ^2.1.4
+  open_filex: ^4.5.0
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

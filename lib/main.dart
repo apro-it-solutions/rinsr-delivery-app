@@ -63,6 +63,15 @@ class MyApp extends StatelessWidget {
         initialRoute: AppRouter.splash,
         onGenerateRoute: AppRouter.onGenerateRoute,
         theme: AppTheme.lightTheme,
+        builder: (context, child) {
+          return SafeArea(
+            top: false,
+            left: false,
+            right: false,
+            minimum: const EdgeInsets.only(bottom: 10),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
       ),
     );
   }

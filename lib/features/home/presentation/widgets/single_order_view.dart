@@ -5,6 +5,7 @@ import '../../../../core/constants/status_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/injection_container.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/get_orders_entity.dart';
 import '../../../order/domain/entities/accept_order_params.dart';
 import '../../../order/presentation/bloc/order_bloc.dart';
@@ -144,6 +145,74 @@ class _SingleOrderViewState extends State<SingleOrderView> {
             child: Divider(height: 1, color: AppColors.dividerColor),
           ),
           _buildDistanceInfo(context),
+          if (_pickupSummary() != null) ...[
+            const SizedBox(height: 12),
+            _buildPickupSummary(context),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String? _pickupSummary() {
+    final date = widget.order.pickupDate;
+    final slot = widget.order.pickupTimeSlot;
+    final dateText = date != null ? formatDateMMMDDYYYY(date) : null;
+    final start = slot?.startTime;
+    final end = slot?.endTime;
+    String? slotText;
+    if (start != null && start.isNotEmpty && end != null && end.isNotEmpty) {
+      slotText = '$start – $end';
+    } else if (start != null && start.isNotEmpty) {
+      slotText = start;
+    } else if (end != null && end.isNotEmpty) {
+      slotText = end;
+    }
+    if (dateText == null && slotText == null) return null;
+    if (dateText != null && slotText != null) return '$dateText · $slotText';
+    return dateText ?? slotText;
+  }
+
+  Widget _buildPickupSummary(BuildContext context) {
+    final summary = _pickupSummary() ?? '';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.accent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.event_outlined,
+            size: 18,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Scheduled Pickup',
+                  style: AppTextStyles.smallTextStyle(context).copyWith(
+                    color: AppColors.greyTextColor,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  summary,
+                  style: AppTextStyles.mediumTextStyle(context).copyWith(
+                    color: AppColors.headerTextColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

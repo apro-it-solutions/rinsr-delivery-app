@@ -22,6 +22,22 @@
           }
         },
         {
+          "client_id": "1045594865170-c45dvdsvaske2qngd4119jvkis27vpcb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rinsr.client",
+            "certificate_hash": "8abbbdd86501bcba11599cb1edb096e60bf40168"
+          }
+        },
+        {
+          "client_id": "1045594865170-i49fo5tlrv6ro588ojc4ltfrm3l4cuvj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rinsr.client",
+            "certificate_hash": "45c97ae751cdde278375d3b58c76d497eddf534e"
+          }
+        },
+        {
           "client_id": "1045594865170-5vuqt01n7tjj4c5o10cdcqcu0719e8of.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -58,11 +74,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "1045594865170-8nv7jgo3b4eaa2ns2bma4rd8p08dt4p0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rinsr.delivery",
+            "certificate_hash": "36ca37a6506fb473a0457c0ba32cfbfc0ce729b3"
+          }
+        },
+        {
           "client_id": "1045594865170-ejvjt4nmjbjolsm5mo84b5hdh4nc8b4m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.rinsr.delivery",
             "certificate_hash": "e7fe09e869fd3f246b08515afdd3d66273865e83"
+          }
+        },
+        {
+          "client_id": "1045594865170-k0vmuk330gtkilai6pai5l6n3ej3fo3h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rinsr.delivery",
+            "certificate_hash": "07eee86eaeb451fee8de29d9b77a24107ab07170"
           }
         },
         {
@@ -101,6 +133,22 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "1045594865170-i0uobdurijh04b0acgg97t1edsrnd32l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rinsr.vendor",
+            "certificate_hash": "5a817c7b77ba1d83958ce5f302a5621bde36ffaf"
+          }
+        },
+        {
+          "client_id": "1045594865170-nmefdk7u9us29id93dhpq0ma02ud02m3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rinsr.vendor",
+            "certificate_hash": "b176faaae860f41f7587ef1feb440b88628d7d61"
+          }
+        },
         {
           "client_id": "1045594865170-osctibhenjkps3h5cqk09kr8tjvq9v5s.apps.googleusercontent.com",
           "client_type": 1,

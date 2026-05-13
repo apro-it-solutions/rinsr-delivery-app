@@ -277,7 +277,7 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
             ),
             icon: const Icon(Icons.qr_code_scanner, size: 24),
             label: const Text(
-              'Scan Barcode & Finish',
+              'Scan QR Code & Finish',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
