@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/constants/constants.dart';
@@ -19,6 +20,7 @@ import '../widgets/profile_nav_tile.dart';
 import '../widgets/profile_section_card.dart';
 import 'daily_history_page.dart';
 import 'invoices_page.dart';
+import 'reviews_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -28,6 +30,10 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploadingPhoto = false;
+  String? _pendingPhotoPath;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +48,88 @@ class _ProfilePageState extends State<ProfilePage> {
     if (id != null) {
       context.read<ProfileBloc>().add(GetAgentDetailsEvent(id));
     }
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    if (_isUploadingPhoto) return;
+    final source = await _showPhotoSourceSheet();
+    if (source == null) return;
+    final XFile? picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 1600,
+    );
+    if (picked == null) return;
+    setState(() {
+      _pendingPhotoPath = picked.path;
+      _isUploadingPhoto = true;
+    });
+    if (!mounted) return;
+    context.read<ProfileBloc>().add(
+      UpdateProfileImageEvent(filePath: picked.path),
+    );
+  }
+
+  Future<ImageSource?> _showPhotoSourceSheet() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBorderColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Update profile photo',
+                        style: AppTextStyles.textMediumfs16(context).copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.headerTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_camera_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: const Text('Take a photo'),
+                  onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_library_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: const Text('Choose from gallery'),
+                  onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _humanize(String? raw) {
@@ -94,6 +182,24 @@ class _ProfilePageState extends State<ProfilePage> {
               context: context,
               message: state.message,
             );
+          } else if (state is UpdateProfileImageSuccessState) {
+            setState(() {
+              _isUploadingPhoto = false;
+              _pendingPhotoPath = null;
+            });
+            AppAlerts.showSuccessSnackBar(
+              context: context,
+              message: state.message,
+            );
+          } else if (state is UpdateProfileImageErrorState) {
+            setState(() {
+              _isUploadingPhoto = false;
+              _pendingPhotoPath = null;
+            });
+            AppAlerts.showErrorSnackBar(
+              context: context,
+              message: state.message,
+            );
           }
         },
         builder: (context, state) {
@@ -116,9 +222,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       state.message,
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.mediumTextStyle(context).copyWith(
-                        color: AppColors.greyTextColor,
-                      ),
+                      style: AppTextStyles.mediumTextStyle(
+                        context,
+                      ).copyWith(color: AppColors.greyTextColor),
                     ),
                     const SizedBox(height: 14),
                     OutlinedButton.icon(
@@ -145,7 +251,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (data.basicInfo != null)
-                      ProfileHeader(basicInfo: data.basicInfo!),
+                      ProfileHeader(
+                        basicInfo: data.basicInfo!,
+                        onEditPhoto: _pickAndUploadPhoto,
+                        isUploadingPhoto: _isUploadingPhoto,
+                        pendingPhotoPath: _pendingPhotoPath,
+                      ),
                     const SizedBox(height: 16),
                     OnlineStatusToggle(
                       isActive: data.basicInfo?.isActive ?? false,
@@ -158,8 +269,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       _buildBasicInfoCard(data.basicInfo!),
                     const SizedBox(height: 16),
                     if (data.basicInfo?.vehicleDetails != null)
-                      _buildVehicleCard(data.basicInfo!.vehicleDetails!,
-                          data.basicInfo!.vehicleType),
+                      _buildVehicleCard(
+                        data.basicInfo!.vehicleDetails!,
+                        data.basicInfo!.vehicleType,
+                      ),
                     const SizedBox(height: 16),
                     if (data.payoutDetails?.bankDetails != null)
                       _buildBankCard(data.payoutDetails!.bankDetails!),
@@ -172,9 +285,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => InvoicesPage(
-                            invoices: data.invoices ?? const [],
-                          ),
+                          builder: (_) =>
+                              InvoicesPage(invoices: data.invoices ?? const []),
                         ),
                       ),
                     ),
@@ -192,6 +304,35 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    Builder(
+                      builder: (context) {
+                        final partnerId = SharedPreferencesService.getString(
+                          AppConstants.kAgentId,
+                        );
+                        return ProfileNavTile(
+                          title: 'Reviews',
+                          icon: Icons.star_outline_rounded,
+                          subtitle: 'See ratings from customers',
+                          onTap: () {
+                            if (partnerId == null || partnerId.isEmpty) {
+                              AppAlerts.showErrorSnackBar(
+                                context: context,
+                                message: 'Unable to load reviews',
+                              );
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ReviewsPage(partnerId: partnerId),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
                     _buildLogoutTile(context),

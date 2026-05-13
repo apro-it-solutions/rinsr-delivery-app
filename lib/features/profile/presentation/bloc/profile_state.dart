@@ -68,3 +68,27 @@ final class ToggleActiveErrorState extends ProfileActionState {
   @override
   List<Object> get props => [message];
 }
+
+final class UpdateProfileImageLoadingState extends ProfileActionState {}
+
+final class UpdateProfileImageSuccessState extends ProfileActionState {
+  final String message;
+  final String? photoUrl;
+
+  const UpdateProfileImageSuccessState({
+    required this.message,
+    this.photoUrl,
+  });
+
+  @override
+  List<Object> get props => [message, photoUrl ?? ''];
+}
+
+final class UpdateProfileImageErrorState extends ProfileActionState {
+  final String message;
+
+  const UpdateProfileImageErrorState({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}

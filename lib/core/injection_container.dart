@@ -28,7 +28,10 @@ import '../features/order/domain/usecases/update_order.dart';
 import '../features/profile/data/repositories/profile_repository_impl.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
 import '../features/profile/domain/usecases/get_agent_details.dart';
+import '../features/profile/domain/usecases/get_ratings.dart';
 import '../features/profile/domain/usecases/toggle_active.dart';
+import '../features/profile/domain/usecases/update_profile_image.dart';
+import '../features/profile/presentation/bloc/ratings_bloc.dart';
 import '../features/order/presentation/bloc/order_bloc.dart';
 import 'network/api_handler.dart';
 
@@ -73,6 +76,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateOrder(sl()));
   sl.registerLazySingleton(() => GetAgentDetails(sl()));
   sl.registerLazySingleton(() => ToggleActive(sl()));
+  sl.registerLazySingleton(() => UpdateProfileImage(sl()));
+  sl.registerLazySingleton(() => GetRatings(sl()));
   sl.registerLazySingleton(() => NotifyUser(sl()));
   sl.registerLazySingleton(() => AcceptOrder(sl()));
 
@@ -135,4 +140,6 @@ Future<void> init() async {
       bluetoothScannerService: sl(),
     ),
   );
+
+  sl.registerFactory(() => RatingsBloc(getRatings: sl()));
 }

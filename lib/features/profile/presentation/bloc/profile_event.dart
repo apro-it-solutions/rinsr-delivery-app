@@ -26,3 +26,12 @@ final class ToggleActiveEvent extends ProfileEvent {
   @override
   List<Object> get props => [isActive];
 }
+
+final class UpdateProfileImageEvent extends ProfileEvent {
+  final String filePath;
+
+  const UpdateProfileImageEvent({required this.filePath});
+
+  @override
+  List<Object> get props => [filePath];
+}

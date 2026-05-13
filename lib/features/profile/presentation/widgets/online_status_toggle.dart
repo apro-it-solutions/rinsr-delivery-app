@@ -42,9 +42,7 @@ class OnlineStatusToggle extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Icon(
-                  pendingValue
-                      ? Icons.wifi_rounded
-                      : Icons.wifi_off_rounded,
+                  pendingValue ? Icons.wifi_rounded : Icons.wifi_off_rounded,
                   size: 18,
                   color: pendingValue
                       ? const Color(0xff138A4F)
@@ -57,7 +55,7 @@ class OnlineStatusToggle extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      pendingValue ? 'You\'re Active' : 'You\'re Inactive',
+                      pendingValue ? 'You\'re Online' : 'You\'re Offline',
                       style: AppTextStyles.textMediumfs16(context).copyWith(
                         fontWeight: FontWeight.w600,
                         color: AppColors.headerTextColor,
@@ -68,9 +66,9 @@ class OnlineStatusToggle extends StatelessWidget {
                       pendingValue
                           ? 'You will receive new order requests'
                           : 'You won\'t receive new orders',
-                      style: AppTextStyles.smallTextStyle(context).copyWith(
-                        color: AppColors.greyTextColor,
-                      ),
+                      style: AppTextStyles.smallTextStyle(
+                        context,
+                      ).copyWith(color: AppColors.greyTextColor),
                     ),
                   ],
                 ),
@@ -88,6 +86,8 @@ class OnlineStatusToggle extends StatelessWidget {
                 Switch.adaptive(
                   value: pendingValue,
                   activeTrackColor: AppColors.primary,
+                  inactiveThumbColor: AppColors.dividerColor,
+                  inactiveTrackColor: AppColors.lightBorderColor,
                   onChanged: (value) {
                     context.read<ProfileBloc>().add(
                       ToggleActiveEvent(isActive: value),

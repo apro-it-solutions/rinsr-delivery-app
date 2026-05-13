@@ -184,11 +184,7 @@ class _SingleOrderViewState extends State<SingleOrderView> {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.event_outlined,
-            size: 18,
-            color: AppColors.primary,
-          ),
+          const Icon(Icons.event_outlined, size: 18, color: AppColors.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -218,20 +214,39 @@ class _SingleOrderViewState extends State<SingleOrderView> {
     );
   }
 
+  String _formatDuration(int totalMinutes) {
+    if (totalMinutes < 60) {
+      return '$totalMinutes ${totalMinutes == 1 ? 'min' : 'mins'}';
+    }
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    final hoursLabel = '$hours ${hours == 1 ? 'hour' : 'hours'}';
+    if (minutes == 0) return hoursLabel;
+    final minutesLabel = '$minutes ${minutes == 1 ? 'min' : 'mins'}';
+    return '$hoursLabel $minutesLabel';
+  }
+
   Widget _buildDistanceInfo(BuildContext context) {
     return BlocBuilder<OrderBloc, OrderState>(
       builder: (context, state) {
-        String distance = '-- km';
+        String agentToOrder = '-- km';
         String duration = '-- min';
 
         if (state is OrderLoaded && state.distanceInMeters != null) {
-          distance =
+          agentToOrder =
               '${(state.distanceInMeters! / 1000).toStringAsFixed(1)} km';
           final minutes = (state.distanceInMeters! / 1000 * 3).round();
-          duration = '$minutes mins';
+          duration = _formatDuration(minutes);
         }
 
-        return Row(
+        final orderToDropKm = widget.order.distanceInKms;
+        final orderToDrop = orderToDropKm != null
+            ? '${orderToDropKm.toStringAsFixed(1)} km'
+            : '-- km';
+
+        return Column(
+          spacing: 8,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoChip(
               context,
@@ -239,16 +254,76 @@ class _SingleOrderViewState extends State<SingleOrderView> {
               duration,
               AppColors.primary,
             ),
-            const SizedBox(width: 12),
-            _buildInfoChip(
-              context,
-              Icons.directions_bike,
-              distance,
-              AppColors.primaryGreyColor,
+            Row(
+              spacing: 8,
+              children: [
+                _buildLabeledChip(
+                  context,
+                  icon: Icons.directions_bike,
+                  label: 'You → Pickup',
+                  value: agentToOrder,
+                  color: AppColors.primaryGreyColor,
+                ),
+                _buildLabeledChip(
+                  context,
+                  icon: Icons.local_shipping_outlined,
+                  label: 'Pickup → Drop',
+                  value: orderToDrop,
+                  color: AppColors.primary,
+                ),
+              ],
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildLabeledChip(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.smallTextStyle(context).copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: AppTextStyles.mediumTextStyle(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -265,6 +340,7 @@ class _SingleOrderViewState extends State<SingleOrderView> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),

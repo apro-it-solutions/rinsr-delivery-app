@@ -22,6 +22,7 @@ class OrderDetailsEntity extends Equatable {
   final UserIdEntity? userId;
   final DateTime? pickupDate;
   final ServiceIdEntity? serviceId;
+  final double? distanceInKms;
   final dynamic addons;
   final String? totalWeightKg;
   final String? totalNoOfClothes;
@@ -96,6 +97,7 @@ class OrderDetailsEntity extends Equatable {
     this.pricingType,
     this.services,
     this.selectedClothingItems,
+    this.distanceInKms,
   });
 
   bool get isPerPiece => pricingType == 'per_piece';

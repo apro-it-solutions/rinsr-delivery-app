@@ -87,11 +87,13 @@ Order _$OrderFromJson(Map<String, dynamic> json) => Order(
   selectedClothingItems: (json['selected_clothing_items'] as List<dynamic>?)
       ?.map((e) => ServiceItem.fromJson(e as Map<String, dynamic>))
       .toList(),
+  distanceInKms: (json['distance_km'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
   'pickup_time_slot': instance.pickupTimeSlot,
   'pickup_address': instance.pickupAddress,
+  'distance_km': instance.distanceInKms,
   'order_id': instance.displayOrderID,
   '_id': instance.id,
   'user_id': instance.userId,

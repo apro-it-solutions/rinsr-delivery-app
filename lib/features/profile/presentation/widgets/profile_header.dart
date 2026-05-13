@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -7,9 +9,18 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/get_agent_entity.dart';
 
 class ProfileHeader extends StatelessWidget {
-  const ProfileHeader({super.key, required this.basicInfo});
+  const ProfileHeader({
+    super.key,
+    required this.basicInfo,
+    this.onEditPhoto,
+    this.isUploadingPhoto = false,
+    this.pendingPhotoPath,
+  });
 
   final BasicInfoEntity basicInfo;
+  final VoidCallback? onEditPhoto;
+  final bool isUploadingPhoto;
+  final String? pendingPhotoPath;
 
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
@@ -39,29 +50,12 @@ class ProfileHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.accent,
-                  image: photo != null && photo.isNotEmpty
-                      ? DecorationImage(
-                          image: NetworkImage(photo),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: photo == null || photo.isEmpty
-                    ? Text(
-                        _initials(basicInfo.fullName),
-                        style: AppTextStyles.textLargefs20(context).copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      )
-                    : null,
+              _Avatar(
+                photo: photo,
+                pendingPhotoPath: pendingPhotoPath,
+                initials: _initials(basicInfo.fullName),
+                isUploading: isUploadingPhoto,
+                onEdit: onEditPhoto,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -103,6 +97,128 @@ class ProfileHeader extends StatelessWidget {
                 ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({
+    required this.photo,
+    required this.pendingPhotoPath,
+    required this.initials,
+    required this.isUploading,
+    required this.onEdit,
+  });
+
+  final String? photo;
+  final String? pendingPhotoPath;
+  final String initials;
+  final bool isUploading;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasNetwork = photo != null && photo!.isNotEmpty;
+    final hasLocalPending =
+        pendingPhotoPath != null && pendingPhotoPath!.isNotEmpty;
+
+    DecorationImage? image;
+    if (hasLocalPending) {
+      image = DecorationImage(
+        image: FileImage(File(pendingPhotoPath!)),
+        fit: BoxFit.cover,
+      );
+    } else if (hasNetwork) {
+      image = DecorationImage(
+        image: NetworkImage(photo!),
+        fit: BoxFit.cover,
+      );
+    }
+
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: Ink(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.accent,
+                image: image,
+              ),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: isUploading ? null : onEdit,
+                child: Container(
+                  alignment: Alignment.center,
+                  child: image == null
+                      ? Text(
+                          initials,
+                          style: AppTextStyles.textLargefs20(context).copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ),
+          ),
+          if (isUploading)
+            Positioned(
+              left: 0,
+              top: 0,
+              child: IgnorePointer(
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (onEdit != null && !isUploading)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    size: 12,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

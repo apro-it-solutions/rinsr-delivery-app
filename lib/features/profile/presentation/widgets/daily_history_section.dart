@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/get_agent_entity.dart';
 
 class DailyHistorySection extends StatelessWidget {
@@ -17,6 +18,13 @@ class DailyHistorySection extends StatelessWidget {
   String _km(num? v) {
     final value = (v ?? 0).toDouble();
     return '${value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 2)} km';
+  }
+
+  String _formatDate(String? raw) {
+    if (raw == null || raw.isEmpty) return '—';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    return formatDateMMMDDYYYY(parsed);
   }
 
   @override
@@ -35,9 +43,9 @@ class DailyHistorySection extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'No history yet',
-                style: AppTextStyles.smallTextStyle(context).copyWith(
-                  color: AppColors.greyTextColor,
-                ),
+                style: AppTextStyles.smallTextStyle(
+                  context,
+                ).copyWith(color: AppColors.greyTextColor),
               ),
             ],
           ),
@@ -71,7 +79,7 @@ class DailyHistorySection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        history[i].date ?? '—',
+                        _formatDate(history[i].date),
                         style: AppTextStyles.mediumTextStyle(context).copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.headerTextColor,

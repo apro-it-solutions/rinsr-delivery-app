@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <application
-        android:label="Rinsr Delivery Partner"
+        android:label="Rinsr Delivery"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data

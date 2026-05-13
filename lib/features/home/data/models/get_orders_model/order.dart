@@ -25,6 +25,9 @@ class Order extends OrderDetailsEntity {
   @JsonKey(name: 'pickup_address')
   final PickupAddress? pickupAddress;
   @override
+  @JsonKey(name: 'distance_km')
+  final double? distanceInKms;
+  @override
   @JsonKey(name: 'order_id')
   final int? displayOrderID;
   @JsonKey(name: '_id')
@@ -178,6 +181,7 @@ class Order extends OrderDetailsEntity {
     this.pricingType,
     this.services,
     this.selectedClothingItems,
+    this.distanceInKms,
   }) : super(
          orderReturnedDeliveryPartner: orderReturnedDeliveryPartner,
          pickedUpDeliveryPartnerId: pickedUpDeliveryPartnerId,
@@ -218,6 +222,7 @@ class Order extends OrderDetailsEntity {
          pricingType: pricingType,
          services: services,
          selectedClothingItems: selectedClothingItems,
+         distanceInKms: distanceInKms,
        );
 
   factory Order.fromJson(Map<String, dynamic> json) => _$OrderFromJson(json);
@@ -267,6 +272,7 @@ class Order extends OrderDetailsEntity {
     String? pricingType,
     List<ServiceLineEntity>? services,
     List<ServiceItemEntity>? selectedClothingItems,
+    double? distanceInKms,
   }) {
     // Use is-checks instead of `as` so a parent-class instance falls back to
     // the existing value rather than throwing at runtime. Callers that want
@@ -332,6 +338,7 @@ class Order extends OrderDetailsEntity {
               ? selectedClothingItems
               : null) ??
           this.selectedClothingItems,
+      distanceInKms: distanceInKms ?? this.distanceInKms,
     );
   }
 }

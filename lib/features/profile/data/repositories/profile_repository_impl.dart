@@ -5,7 +5,9 @@ import '../../../../core/network/api_handler.dart';
 import '../../../../core/network/network_info.dart';
 
 import '../../domain/entities/get_agent_entity.dart';
+import '../../domain/entities/ratings_entity.dart';
 import '../../domain/entities/toggle_active_entity.dart';
+import '../../domain/entities/update_profile_image_entity.dart';
 
 import '../../domain/repositories/profile_repository.dart';
 import '../data_sources/profile_remote_data_source.dart';
@@ -42,6 +44,32 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
     return await apiHandler.execute(() {
       return remoteDataSource.toggleActive(isActive: isActive);
+    });
+  }
+
+  @override
+  Future<Either<Failure, RatingsEntity>> getRatings({
+    required String partnerId,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+
+    return await apiHandler.execute(() {
+      return remoteDataSource.getRatings(partnerId: partnerId);
+    });
+  }
+
+  @override
+  Future<Either<Failure, UpdateProfileImageEntity>> updateProfileImage({
+    required String filePath,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+
+    return await apiHandler.execute(() {
+      return remoteDataSource.updateProfileImage(filePath: filePath);
     });
   }
 }
