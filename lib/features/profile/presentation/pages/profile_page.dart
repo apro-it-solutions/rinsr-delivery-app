@@ -12,11 +12,13 @@ import '../../../../core/utils/app_alerts.dart';
 import '../../../auth/presentation/auth_router.dart';
 import '../../domain/entities/get_agent_entity.dart';
 import '../bloc/profile_bloc.dart';
-import '../widgets/daily_history_section.dart';
-import '../widgets/invoices_section.dart';
+import '../widgets/online_status_toggle.dart';
 import '../widgets/payout_summary_section.dart';
 import '../widgets/profile_header.dart';
+import '../widgets/profile_nav_tile.dart';
 import '../widgets/profile_section_card.dart';
+import 'daily_history_page.dart';
+import 'invoices_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -82,6 +84,16 @@ class _ProfilePageState extends State<ProfilePage> {
               AuthRouter.login,
               (route) => false,
             );
+          } else if (state is ToggleActiveSuccessState) {
+            AppAlerts.showSuccessSnackBar(
+              context: context,
+              message: state.message,
+            );
+          } else if (state is ToggleActiveErrorState) {
+            AppAlerts.showErrorSnackBar(
+              context: context,
+              message: state.message,
+            );
           }
         },
         builder: (context, state) {
@@ -135,6 +147,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     if (data.basicInfo != null)
                       ProfileHeader(basicInfo: data.basicInfo!),
                     const SizedBox(height: 16),
+                    OnlineStatusToggle(
+                      isActive: data.basicInfo?.isActive ?? false,
+                    ),
+                    const SizedBox(height: 16),
                     if (data.payoutDetails != null)
                       PayoutSummarySection(payout: data.payoutDetails!),
                     const SizedBox(height: 16),
@@ -148,19 +164,33 @@ class _ProfilePageState extends State<ProfilePage> {
                     if (data.payoutDetails?.bankDetails != null)
                       _buildBankCard(data.payoutDetails!.bankDetails!),
                     const SizedBox(height: 16),
-                    ProfileSectionCard(
+                    ProfileNavTile(
                       title: 'Invoices',
                       icon: Icons.receipt_long_outlined,
-                      child: InvoicesSection(
-                        invoices: data.invoices ?? const [],
+                      subtitle:
+                          '${(data.invoices ?? const []).length} invoice(s)',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => InvoicesPage(
+                            invoices: data.invoices ?? const [],
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    ProfileSectionCard(
+                    const SizedBox(height: 12),
+                    ProfileNavTile(
                       title: 'Daily History',
                       icon: Icons.history,
-                      child: DailyHistorySection(
-                        history: data.dailyHistory ?? const [],
+                      subtitle:
+                          '${(data.dailyHistory ?? const []).length} day(s)',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DailyHistoryPage(
+                            history: data.dailyHistory ?? const [],
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),

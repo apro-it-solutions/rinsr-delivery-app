@@ -41,7 +41,8 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => ProfileBloc(getAgentDetails: di.sl()),
+          create: (context) =>
+              ProfileBloc(getAgentDetails: di.sl(), toggleActive: di.sl()),
         ),
         BlocProvider(create: (context) => di.sl<AuthBloc>()),
         BlocProvider(

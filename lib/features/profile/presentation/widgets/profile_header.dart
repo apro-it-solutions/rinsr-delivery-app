@@ -78,9 +78,9 @@ class ProfileHeader extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       basicInfo.phoneNumber ?? '—',
-                      style: AppTextStyles.mediumTextStyle(context).copyWith(
-                        color: AppColors.greyTextColor,
-                      ),
+                      style: AppTextStyles.mediumTextStyle(
+                        context,
+                      ).copyWith(color: AppColors.greyTextColor),
                     ),
                   ],
                 ),
@@ -88,12 +88,14 @@ class ProfileHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.start,
             children: [
               _StatusBadge(status: basicInfo.status),
-              const SizedBox(width: 8),
               _ActivePill(isActive: basicInfo.isActive ?? false),
-              const Spacer(),
               if (memberSince != null)
                 Text(
                   'Since $memberSince',
@@ -156,10 +158,9 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label[0].toUpperCase() + label.substring(1),
-        style: AppTextStyles.smallTextStyle(context).copyWith(
-          color: _fg(),
-          fontWeight: FontWeight.w600,
-        ),
+        style: AppTextStyles.smallTextStyle(
+          context,
+        ).copyWith(color: _fg(), fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -189,10 +190,9 @@ class _ActivePill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             isActive ? 'Active' : 'Inactive',
-            style: AppTextStyles.smallTextStyle(context).copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTextStyles.smallTextStyle(
+              context,
+            ).copyWith(color: color, fontWeight: FontWeight.w600),
           ),
         ],
       ),

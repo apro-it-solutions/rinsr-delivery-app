@@ -17,3 +17,12 @@ final class GetAgentDetailsEvent extends ProfileEvent {
 }
 
 final class LogoutEvent extends ProfileEvent {}
+
+final class ToggleActiveEvent extends ProfileEvent {
+  final bool isActive;
+
+  const ToggleActiveEvent({required this.isActive});
+
+  @override
+  List<Object> get props => [isActive];
+}

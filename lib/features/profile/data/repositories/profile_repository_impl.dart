@@ -5,6 +5,7 @@ import '../../../../core/network/api_handler.dart';
 import '../../../../core/network/network_info.dart';
 
 import '../../domain/entities/get_agent_entity.dart';
+import '../../domain/entities/toggle_active_entity.dart';
 
 import '../../domain/repositories/profile_repository.dart';
 import '../data_sources/profile_remote_data_source.dart';
@@ -28,6 +29,19 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
     return await apiHandler.execute(() {
       return remoteDataSource.getAgentDetails();
+    });
+  }
+
+  @override
+  Future<Either<Failure, ToggleActiveEntity>> toggleActive({
+    required bool isActive,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+
+    return await apiHandler.execute(() {
+      return remoteDataSource.toggleActive(isActive: isActive);
     });
   }
 }

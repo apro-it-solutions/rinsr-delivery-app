@@ -37,3 +37,34 @@ final class ProfileDetailsLoadedState extends ProfileState {
   @override
   List<Object> get props => [agentEntity];
 }
+
+final class ToggleActiveLoadingState extends ProfileActionState {
+  final bool isActive;
+
+  const ToggleActiveLoadingState({required this.isActive});
+
+  @override
+  List<Object> get props => [isActive];
+}
+
+final class ToggleActiveSuccessState extends ProfileActionState {
+  final bool isActive;
+  final String message;
+
+  const ToggleActiveSuccessState({
+    required this.isActive,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [isActive, message];
+}
+
+final class ToggleActiveErrorState extends ProfileActionState {
+  final String message;
+
+  const ToggleActiveErrorState({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}

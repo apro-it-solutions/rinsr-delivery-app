@@ -28,6 +28,7 @@ import '../features/order/domain/usecases/update_order.dart';
 import '../features/profile/data/repositories/profile_repository_impl.dart';
 import '../features/profile/domain/repositories/profile_repository.dart';
 import '../features/profile/domain/usecases/get_agent_details.dart';
+import '../features/profile/domain/usecases/toggle_active.dart';
 import '../features/order/presentation/bloc/order_bloc.dart';
 import 'network/api_handler.dart';
 
@@ -71,6 +72,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetOrders(sl()));
   sl.registerLazySingleton(() => UpdateOrder(sl()));
   sl.registerLazySingleton(() => GetAgentDetails(sl()));
+  sl.registerLazySingleton(() => ToggleActive(sl()));
   sl.registerLazySingleton(() => NotifyUser(sl()));
   sl.registerLazySingleton(() => AcceptOrder(sl()));
 
