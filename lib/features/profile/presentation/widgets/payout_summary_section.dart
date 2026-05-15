@@ -74,9 +74,9 @@ class PayoutSummarySection extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '${_km(today?.distanceKm)} delivered today',
-                style: AppTextStyles.smallTextStyle(context).copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
+                style: AppTextStyles.smallTextStyle(
+                  context,
+                ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
               ),
               if (payout.pricePerKilometre != null) ...[
                 const SizedBox(height: 12),
@@ -103,6 +103,7 @@ class PayoutSummarySection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Row(
+          spacing: 10,
           children: [
             Expanded(
               child: _StatCard(
@@ -112,20 +113,6 @@ class PayoutSummarySection extends StatelessWidget {
                 icon: Icons.trending_up_rounded,
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
-                label: 'Total paid',
-                value: _money(summary?.totalPaid),
-                accent: AppColors.primary,
-                icon: Icons.check_circle_outline,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
             Expanded(
               child: _StatCard(
                 label: 'Pending',
@@ -134,13 +121,26 @@ class PayoutSummarySection extends StatelessWidget {
                 icon: Icons.schedule,
               ),
             ),
-            const SizedBox(width: 10),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          spacing: 10,
+          children: [
             Expanded(
               child: _StatCard(
                 label: 'Distance',
                 value: _km(summary?.totalDistanceKm),
                 accent: const Color(0xff2563EB),
                 icon: Icons.route_outlined,
+              ),
+            ),
+            Expanded(
+              child: _StatCard(
+                label: 'Days worked',
+                value: '${summary?.daysWorked ?? 0}',
+                accent: const Color(0xff7C3AED),
+                icon: Icons.calendar_today_outlined,
               ),
             ),
           ],
@@ -150,21 +150,13 @@ class PayoutSummarySection extends StatelessWidget {
           children: [
             Expanded(
               child: _StatCard(
-                label: 'Days worked',
-                value: '${summary?.daysWorked ?? 0}',
-                accent: const Color(0xff7C3AED),
-                icon: Icons.calendar_today_outlined,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
                 label: 'Completed orders',
                 value: '${payout.totalCompletedOrders ?? 0}',
                 accent: const Color(0xff0EA5E9),
                 icon: Icons.local_shipping_outlined,
               ),
             ),
+            const Expanded(child: SizedBox()),
           ],
         ),
       ],
@@ -209,9 +201,9 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             label,
-            style: AppTextStyles.smallTextStyle(context).copyWith(
-              color: AppColors.greyTextColor,
-            ),
+            style: AppTextStyles.smallTextStyle(
+              context,
+            ).copyWith(color: AppColors.greyTextColor),
           ),
           const SizedBox(height: 2),
           Text(
@@ -244,11 +236,9 @@ class _PaymentChip extends StatelessWidget {
       ),
       child: Text(
         isPaid ? 'Paid' : 'Pending',
-        style: AppTextStyles.smallTextStyle(context).copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-        ),
+        style: AppTextStyles.smallTextStyle(
+          context,
+        ).copyWith(color: color, fontWeight: FontWeight.w700, fontSize: 11),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/constants/constants.dart';
+import '../../../../core/injection_container.dart';
 import '../../../../core/services/shared_preferences_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decoration.dart';
@@ -13,14 +14,13 @@ import '../../../../core/utils/app_alerts.dart';
 import '../../../auth/presentation/auth_router.dart';
 import '../../domain/entities/get_agent_entity.dart';
 import '../bloc/profile_bloc.dart';
+import '../bloc/ratings_bloc.dart';
 import '../widgets/online_status_toggle.dart';
 import '../widgets/payout_summary_section.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_nav_tile.dart';
 import '../widgets/profile_section_card.dart';
 import 'daily_history_page.dart';
-import 'invoices_page.dart';
-import 'reviews_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -33,20 +33,30 @@ class _ProfilePageState extends State<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploadingPhoto = false;
   String? _pendingPhotoPath;
+  late final RatingsBloc _ratingsBloc;
 
   @override
   void initState() {
     super.initState();
+    _ratingsBloc = sl<RatingsBloc>();
     final id = SharedPreferencesService.getString(AppConstants.kAgentId);
     if (id != null) {
       context.read<ProfileBloc>().add(GetAgentDetailsEvent(id));
+      _ratingsBloc.add(FetchRatingsEvent(partnerId: id));
     }
+  }
+
+  @override
+  void dispose() {
+    _ratingsBloc.close();
+    super.dispose();
   }
 
   void _refresh() {
     final id = SharedPreferencesService.getString(AppConstants.kAgentId);
     if (id != null) {
       context.read<ProfileBloc>().add(GetAgentDetailsEvent(id));
+      _ratingsBloc.add(FetchRatingsEvent(partnerId: id));
     }
   }
 
@@ -162,189 +172,172 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      body: BlocConsumer<ProfileBloc, ProfileState>(
-        listenWhen: (previous, current) => current is ProfileActionState,
-        buildWhen: (previous, current) => current is! ProfileActionState,
-        listener: (context, state) {
-          if (state is LogoutState) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              AuthRouter.login,
-              (route) => false,
-            );
-          } else if (state is ToggleActiveSuccessState) {
-            AppAlerts.showSuccessSnackBar(
-              context: context,
-              message: state.message,
-            );
-          } else if (state is ToggleActiveErrorState) {
-            AppAlerts.showErrorSnackBar(
-              context: context,
-              message: state.message,
-            );
-          } else if (state is UpdateProfileImageSuccessState) {
-            setState(() {
-              _isUploadingPhoto = false;
-              _pendingPhotoPath = null;
-            });
-            AppAlerts.showSuccessSnackBar(
-              context: context,
-              message: state.message,
-            );
-          } else if (state is UpdateProfileImageErrorState) {
-            setState(() {
-              _isUploadingPhoto = false;
-              _pendingPhotoPath = null;
-            });
-            AppAlerts.showErrorSnackBar(
-              context: context,
-              message: state.message,
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is ProfileLoadingState) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state is ProfileErrorState) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.cloud_off,
-                      size: 36,
-                      color: AppColors.inactiveGreyColor,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.mediumTextStyle(
-                        context,
-                      ).copyWith(color: AppColors.greyTextColor),
-                    ),
-                    const SizedBox(height: 14),
-                    OutlinedButton.icon(
-                      onPressed: _refresh,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          if (state is ProfileDetailsLoadedState) {
-            final data = state.agentEntity.data;
-            if (data == null) {
-              return const Center(child: Text('No data'));
+      body: BlocProvider<RatingsBloc>.value(
+        value: _ratingsBloc,
+        child: BlocConsumer<ProfileBloc, ProfileState>(
+          listenWhen: (previous, current) => current is ProfileActionState,
+          buildWhen: (previous, current) => current is! ProfileActionState,
+          listener: (context, state) {
+            if (state is LogoutState) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AuthRouter.login,
+                (route) => false,
+              );
+            } else if (state is ToggleActiveSuccessState) {
+              AppAlerts.showSuccessSnackBar(
+                context: context,
+                message: state.message,
+              );
+            } else if (state is ToggleActiveErrorState) {
+              AppAlerts.showErrorSnackBar(
+                context: context,
+                message: state.message,
+              );
+            } else if (state is UpdateProfileImageSuccessState) {
+              setState(() {
+                _isUploadingPhoto = false;
+                _pendingPhotoPath = null;
+              });
+              AppAlerts.showSuccessSnackBar(
+                context: context,
+                message: state.message,
+              );
+            } else if (state is UpdateProfileImageErrorState) {
+              setState(() {
+                _isUploadingPhoto = false;
+                _pendingPhotoPath = null;
+              });
+              AppAlerts.showErrorSnackBar(
+                context: context,
+                message: state.message,
+              );
             }
-            return RefreshIndicator(
-              onRefresh: () async => _refresh(),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (data.basicInfo != null)
-                      ProfileHeader(
-                        basicInfo: data.basicInfo!,
-                        onEditPhoto: _pickAndUploadPhoto,
-                        isUploadingPhoto: _isUploadingPhoto,
-                        pendingPhotoPath: _pendingPhotoPath,
+          },
+          builder: (context, state) {
+            if (state is ProfileLoadingState) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is ProfileErrorState) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.cloud_off,
+                        size: 36,
+                        color: AppColors.inactiveGreyColor,
                       ),
-                    const SizedBox(height: 16),
-                    OnlineStatusToggle(
-                      isActive: data.basicInfo?.isActive ?? false,
-                    ),
-                    const SizedBox(height: 16),
-                    if (data.payoutDetails != null)
-                      PayoutSummarySection(payout: data.payoutDetails!),
-                    const SizedBox(height: 16),
-                    if (data.basicInfo != null)
-                      _buildBasicInfoCard(data.basicInfo!),
-                    const SizedBox(height: 16),
-                    if (data.basicInfo?.vehicleDetails != null)
-                      _buildVehicleCard(
-                        data.basicInfo!.vehicleDetails!,
-                        data.basicInfo!.vehicleType,
+                      const SizedBox(height: 8),
+                      Text(
+                        state.message,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.mediumTextStyle(
+                          context,
+                        ).copyWith(color: AppColors.greyTextColor),
                       ),
-                    const SizedBox(height: 16),
-                    if (data.payoutDetails?.bankDetails != null)
-                      _buildBankCard(data.payoutDetails!.bankDetails!),
-                    const SizedBox(height: 16),
-                    ProfileNavTile(
-                      title: 'Invoices',
-                      icon: Icons.receipt_long_outlined,
-                      subtitle:
-                          '${(data.invoices ?? const []).length} invoice(s)',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              InvoicesPage(invoices: data.invoices ?? const []),
+                      const SizedBox(height: 14),
+                      OutlinedButton.icon(
+                        onPressed: _refresh,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            if (state is ProfileDetailsLoadedState) {
+              final data = state.agentEntity.data;
+              if (data == null) {
+                return const Center(child: Text('No data'));
+              }
+              return RefreshIndicator(
+                onRefresh: () async => _refresh(),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (data.basicInfo != null)
+                        BlocBuilder<RatingsBloc, RatingsState>(
+                          builder: (context, ratingsState) {
+                            num? avg;
+                            int? count;
+                            final isLoading =
+                                ratingsState is RatingsLoadingState ||
+                                ratingsState is RatingsInitial;
+                            if (ratingsState is RatingsLoadedState) {
+                              final partner =
+                                  ratingsState.ratings.deliveryPartner;
+                              avg = partner?.avgRating;
+                              count =
+                                  partner?.ratingCount ??
+                                  ratingsState.ratings.total ??
+                                  ratingsState.ratings.ratings.length;
+                            }
+                            return ProfileHeader(
+                              basicInfo: data.basicInfo!,
+                              onEditPhoto: _pickAndUploadPhoto,
+                              isUploadingPhoto: _isUploadingPhoto,
+                              pendingPhotoPath: _pendingPhotoPath,
+                              avgRating: avg,
+                              ratingCount: count,
+                              isLoadingRating: isLoading,
+                            );
+                          },
                         ),
+                      const SizedBox(height: 16),
+                      OnlineStatusToggle(
+                        isActive: data.basicInfo?.isActive ?? false,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    ProfileNavTile(
-                      title: 'Daily History',
-                      icon: Icons.history,
-                      subtitle:
-                          '${(data.dailyHistory ?? const []).length} day(s)',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DailyHistoryPage(
-                            history: data.dailyHistory ?? const [],
+                      const SizedBox(height: 16),
+                      if (data.payoutDetails != null)
+                        PayoutSummarySection(payout: data.payoutDetails!),
+                      const SizedBox(height: 16),
+                      if (data.basicInfo != null)
+                        _buildBasicInfoCard(data.basicInfo!),
+                      const SizedBox(height: 16),
+                      if (data.basicInfo?.vehicleDetails != null)
+                        _buildVehicleCard(
+                          data.basicInfo!.vehicleDetails!,
+                          data.basicInfo!.vehicleType,
+                        ),
+                      const SizedBox(height: 16),
+                      if (data.payoutDetails?.bankDetails != null)
+                        _buildBankCard(data.payoutDetails!.bankDetails!),
+                      const SizedBox(height: 16),
+                      ProfileNavTile(
+                        title: 'Daily History',
+                        icon: Icons.history,
+                        subtitle:
+                            '${(data.dailyHistory ?? const []).length} day(s)',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DailyHistoryPage(
+                              history: data.dailyHistory ?? const [],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Builder(
-                      builder: (context) {
-                        final partnerId = SharedPreferencesService.getString(
-                          AppConstants.kAgentId,
-                        );
-                        return ProfileNavTile(
-                          title: 'Reviews',
-                          icon: Icons.star_outline_rounded,
-                          subtitle: 'See ratings from customers',
-                          onTap: () {
-                            if (partnerId == null || partnerId.isEmpty) {
-                              AppAlerts.showErrorSnackBar(
-                                context: context,
-                                message: 'Unable to load reviews',
-                              );
-                              return;
-                            }
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ReviewsPage(partnerId: partnerId),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    _buildLogoutTile(context),
-                  ],
+
+                      const SizedBox(height: 20),
+                      _buildLogoutTile(context),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }
-          return const Center(child: Text('No data'));
-        },
+              );
+            }
+            return const Center(child: Text('No data'));
+          },
+        ),
       ),
     );
+
   }
 
   Widget _buildBasicInfoCard(BasicInfoEntity info) {
@@ -358,7 +351,7 @@ class _ProfilePageState extends State<ProfilePage> {
           InfoRow(label: 'Address', value: info.currentAddress ?? '—'),
           InfoRow(label: 'Availability', value: _humanize(info.availability)),
           InfoRow(
-            label: 'Preferred zones',
+            label: 'Zone',
             value: (info.preferredZones == null || info.preferredZones!.isEmpty)
                 ? '—'
                 : info.preferredZones!.join(', '),

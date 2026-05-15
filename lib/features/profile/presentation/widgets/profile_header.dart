@@ -15,12 +15,18 @@ class ProfileHeader extends StatelessWidget {
     this.onEditPhoto,
     this.isUploadingPhoto = false,
     this.pendingPhotoPath,
+    this.avgRating,
+    this.ratingCount,
+    this.isLoadingRating = false,
   });
 
   final BasicInfoEntity basicInfo;
   final VoidCallback? onEditPhoto;
   final bool isUploadingPhoto;
   final String? pendingPhotoPath;
+  final num? avgRating;
+  final int? ratingCount;
+  final bool isLoadingRating;
 
   String _initials(String? name) {
     if (name == null || name.trim().isEmpty) return '?';
@@ -90,6 +96,11 @@ class ProfileHeader extends StatelessWidget {
             children: [
               _StatusBadge(status: basicInfo.status),
               _ActivePill(isActive: basicInfo.isActive ?? false),
+              _RatingPill(
+                avgRating: avgRating,
+                ratingCount: ratingCount,
+                isLoading: isLoadingRating,
+              ),
               if (memberSince != null)
                 Text(
                   'Since $memberSince',
@@ -99,6 +110,68 @@ class ProfileHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RatingPill extends StatelessWidget {
+  const _RatingPill({
+    required this.avgRating,
+    required this.ratingCount,
+    required this.isLoading,
+  });
+
+  final num? avgRating;
+  final int? ratingCount;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    const amber = Color(0xffF59E0B);
+    final bg = amber.withValues(alpha: 0.12);
+
+    Widget content;
+    if (isLoading && avgRating == null) {
+      content = const SizedBox(
+        width: 10,
+        height: 10,
+        child: CircularProgressIndicator(strokeWidth: 1.6, color: amber),
+      );
+    } else {
+      final avg = (avgRating ?? 0).toDouble();
+      final avgText = avg.toStringAsFixed(1);
+      final count = ratingCount ?? 0;
+      content = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded, size: 14, color: amber),
+          const SizedBox(width: 4),
+          Text(
+            avgText,
+            style: AppTextStyles.smallTextStyle(
+              context,
+            ).copyWith(color: amber, fontWeight: FontWeight.w700),
+          ),
+          if (count > 0) ...[
+            const SizedBox(width: 4),
+            Text(
+              '($count)',
+              style: AppTextStyles.smallTextStyle(
+                context,
+              ).copyWith(color: AppColors.greyTextColor),
+            ),
+          ],
+        ],
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: content,
     );
   }
 }
@@ -131,10 +204,22 @@ class _Avatar extends StatelessWidget {
         fit: BoxFit.cover,
       );
     } else if (hasNetwork) {
-      image = DecorationImage(
-        image: NetworkImage(photo!),
-        fit: BoxFit.cover,
-      );
+      image = DecorationImage(image: NetworkImage(photo!), fit: BoxFit.cover);
+    }
+
+    final hasImage = image != null;
+
+    void handleTap() {
+      if (isUploading) return;
+      if (hasImage) {
+        _showPhotoViewer(
+          context,
+          networkUrl: hasLocalPending ? null : (hasNetwork ? photo : null),
+          localPath: hasLocalPending ? pendingPhotoPath : null,
+        );
+      } else if (onEdit != null) {
+        onEdit!();
+      }
     }
 
     return SizedBox(
@@ -157,7 +242,7 @@ class _Avatar extends StatelessWidget {
               ),
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: isUploading ? null : onEdit,
+                onTap: handleTap,
                 child: Container(
                   alignment: Alignment.center,
                   child: image == null
@@ -201,26 +286,82 @@ class _Avatar extends StatelessWidget {
             Positioned(
               right: 0,
               bottom: 0,
-              child: IgnorePointer(
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.camera_alt_rounded,
-                    size: 12,
-                    color: Colors.white,
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: onEdit,
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primary,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 12,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
         ],
       ),
+    );
+  }
+
+  void _showPhotoViewer(
+    BuildContext context, {
+    String? networkUrl,
+    String? localPath,
+  }) {
+    final ImageProvider provider = localPath != null
+        ? FileImage(File(localPath)) as ImageProvider
+        : NetworkImage(networkUrl!);
+
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => Navigator.of(ctx).pop(),
+                  child: InteractiveViewer(
+                    minScale: 1,
+                    maxScale: 4,
+                    child: Center(
+                      child: Image(image: provider, fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: MediaQuery.of(ctx).padding.top + 8,
+                right: 8,
+                child: Material(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

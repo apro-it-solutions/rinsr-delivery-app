@@ -215,15 +215,27 @@ class _SingleOrderViewState extends State<SingleOrderView> {
   }
 
   String _formatDuration(int totalMinutes) {
-    if (totalMinutes < 60) {
-      return '$totalMinutes ${totalMinutes == 1 ? 'min' : 'mins'}';
-    }
-    final hours = totalMinutes ~/ 60;
-    final minutes = totalMinutes % 60;
-    final hoursLabel = '$hours ${hours == 1 ? 'hour' : 'hours'}';
-    if (minutes == 0) return hoursLabel;
-    final minutesLabel = '$minutes ${minutes == 1 ? 'min' : 'mins'}';
-    return '$hoursLabel $minutesLabel';
+    if (totalMinutes < 1) return '0 min';
+
+    const minutesPerHour = 60;
+    const minutesPerDay = 24 * minutesPerHour;
+    const minutesPerWeek = 7 * minutesPerDay;
+
+    final weeks = totalMinutes ~/ minutesPerWeek;
+    final days = (totalMinutes % minutesPerWeek) ~/ minutesPerDay;
+    final hours = (totalMinutes % minutesPerDay) ~/ minutesPerHour;
+    final minutes = totalMinutes % minutesPerHour;
+
+    String label(int value, String singular, String plural) =>
+        '$value ${value == 1 ? singular : plural}';
+
+    final parts = <String>[];
+    if (weeks > 0) parts.add(label(weeks, 'week', 'weeks'));
+    if (days > 0) parts.add(label(days, 'day', 'days'));
+    if (hours > 0) parts.add(label(hours, 'hour', 'hours'));
+    if (minutes > 0) parts.add(label(minutes, 'min', 'mins'));
+
+    return parts.take(2).join(' ');
   }
 
   Widget _buildDistanceInfo(BuildContext context) {
