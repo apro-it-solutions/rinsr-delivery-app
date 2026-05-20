@@ -98,8 +98,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
@@ -107,7 +109,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           ),
         );
         result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update status'));
+          },
           (response) =>
               emit(OrderUpdated(currentOrder.copyWith(status: 'processing'))),
         );
@@ -121,8 +126,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
@@ -130,7 +137,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           ),
         );
         result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update status'));
+          },
           (response) => emit(
             OrderUpdated(currentOrder.copyWith(status: 'vendor_picked_up')),
           ),
@@ -144,13 +154,18 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(orderId: currentOrder.orderId!, status: 'washing'),
         );
         result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update status'));
+          },
           (response) =>
               emit(OrderUpdated(currentOrder.copyWith(status: 'washing'))),
         );
@@ -164,8 +179,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
@@ -173,7 +190,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           ),
         );
         result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update status'));
+          },
           (response) => emit(
             OrderUpdated(currentOrder.copyWith(status: 'vendor_returning')),
           ),
@@ -187,8 +207,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
@@ -196,7 +218,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           ),
         );
         result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update status'));
+          },
           (response) =>
               emit(OrderUpdated(currentOrder.copyWith(status: 'processing'))),
         );
@@ -210,8 +235,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
@@ -219,7 +246,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           ),
         );
         result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update status'));
+          },
           (response) => emit(
             OrderUpdated(currentOrder.copyWith(status: 'out_for_delivery')),
           ),
@@ -233,8 +263,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) async {
     if (state is OrderLoaded) {
-      final currentOrder = (state as OrderLoaded).order;
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
       if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
         final result = await updateOrder(
           UpdateOrderParams(
             orderId: currentOrder.orderId!,
@@ -243,7 +275,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           ),
         );
         result.fold(
-          (failure) => emit(const OrderError('Failed to update status')),
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(const OrderError('Failed to update status'));
+          },
           (response) => emit(
             OrderUpdated(
               currentOrder.copyWith(

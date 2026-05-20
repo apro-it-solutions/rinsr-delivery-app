@@ -37,10 +37,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     context.read<HomeBloc>().add(GetOrdersEvent(agentId: deliveryAgentId));
     // Listen for new orders
     _orderSubscription = FCMService.orderStream.listen((data) {
-      if (mounted) {
-        _showNewOrderBottomSheet(data);
+      if (!mounted) return;
+      if (_hasActiveOrder()) {
+        // Agent already busy with another order — drop the incoming
+        // request rather than letting them accept it on top.
+        return;
       }
+      _showNewOrderBottomSheet(data);
     });
+  }
+
+  bool _hasActiveOrder() {
+    final agentId = deliveryAgentId;
+    if (agentId == null) return false;
+    final homeState = context.read<HomeBloc>().state;
+    if (homeState is! HomeLoaded) return false;
+    return homeState.allOrders.any((o) => o.isActiveForAgent(agentId));
   }
 
   @override
@@ -220,6 +232,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           data: data,
           onSkip: () => Navigator.pop(context),
           onAccept: () {
+            if (_hasActiveOrder()) {
+              Navigator.pop(context);
+              return;
+            }
             final orderId = data['orderId'];
             if (orderId != null) {
               context.read<HomeBloc>().add(

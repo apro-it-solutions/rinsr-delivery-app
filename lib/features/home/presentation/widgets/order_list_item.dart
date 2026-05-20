@@ -8,6 +8,7 @@ import '../../../../core/injection_container.dart';
 import '../../../../core/services/shared_preferences_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/app_alerts.dart';
 import '../../../order/domain/entities/accept_order_params.dart';
 import '../../domain/entities/get_orders_entity.dart';
 import '../../../order/presentation/bloc/order_bloc.dart';
@@ -160,7 +161,7 @@ class _OrderListItemState extends State<OrderListItem> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                _formatDate(widget.order.createdAt),
+                                _displayDateLabel(widget.order),
                                 style: AppTextStyles.smallTextStyle(context)
                                     .copyWith(
                                       color: AppColors.greyTextColor,
@@ -347,6 +348,14 @@ class _OrderListItemState extends State<OrderListItem> {
                                   flex: 2,
                                   child: ElevatedButton(
                                     onPressed: () async {
+                                      if (_hasOtherActiveOrder(context)) {
+                                        AppAlerts.showErrorSnackBar(
+                                          context: context,
+                                          message:
+                                              'Finish your current delivery before accepting a new order.',
+                                        );
+                                        return;
+                                      }
                                       context.read<HomeBloc>().add(
                                         AcceptOrderEvent(
                                           params: AcceptOrderParams(
@@ -459,5 +468,39 @@ class _OrderListItemState extends State<OrderListItem> {
   String _formatDate(DateTime? date) {
     if (date == null) return '';
     return DateFormat('MMM d, y • h:mm a').format(date);
+  }
+
+  String _displayDateLabel(OrderDetailsEntity order) {
+    if (order.computedStatus == OrderStatus.delivered) {
+      final deliveredAt = _deliveredAt(order);
+      if (deliveredAt != null) {
+        return 'Delivered • ${_formatDate(deliveredAt)}';
+      }
+    }
+    return _formatDate(order.createdAt);
+  }
+
+  DateTime? _deliveredAt(OrderDetailsEntity order) {
+    final deliveredUpdates = order.deliveryUpdates?.delivered;
+    if (deliveredUpdates == null || deliveredUpdates.isEmpty) return null;
+    DateTime? latest;
+    for (final u in deliveredUpdates) {
+      final ts = u.timestamp;
+      if (ts == null) continue;
+      if (latest == null || ts.isAfter(latest)) latest = ts;
+    }
+    return latest;
+  }
+
+  bool _hasOtherActiveOrder(BuildContext context) {
+    final agentId = deliveryAgentId;
+    if (agentId == null) return false;
+    final homeState = context.read<HomeBloc>().state;
+    if (homeState is! HomeLoaded) return false;
+    for (final o in homeState.allOrders) {
+      if (o.orderId == widget.order.orderId) continue;
+      if (o.isActiveForAgent(agentId)) return true;
+    }
+    return false;
   }
 }

@@ -100,8 +100,34 @@ class OrderDetailsEntity extends Equatable {
     this.distanceInKms,
   });
 
-  bool get isPerPiece => pricingType == 'per_piece';
-  bool get isPerWeight => pricingType == 'per_weight' || pricingType == null;
+  // Rinsr Loop = subscription-based laundry; always weight-based regardless of
+  // pricingType, since piece-count confirmation is not meaningful for these.
+  bool get isSubscriptionOrder =>
+      subscriptionSnapshot != null || subscriptionId != null;
+
+  bool get isPerPiece => !isSubscriptionOrder && pricingType == 'per_piece';
+  bool get isPerWeight =>
+      isSubscriptionOrder ||
+      pricingType == 'per_weight' ||
+      pricingType == null;
+
+  // Statuses where the agent is no longer actively involved with the order.
+  bool get isTerminalForAgent {
+    final s = computedStatus;
+    return s == OrderStatus.cancelled ||
+        s == OrderStatus.delivered ||
+        s == OrderStatus.processing ||
+        s == OrderStatus.washing ||
+        s == OrderStatus.ready;
+  }
+
+  // True if [agentId] is currently the assigned delivery partner and the
+  // order is still in-progress (not terminal). Used to block accepting new
+  // orders while one is already in flight.
+  bool isActiveForAgent(String agentId) {
+    if (deliveryUpdates?.currentDeliveryPartnerId != agentId) return false;
+    return !isTerminalForAgent;
+  }
 
   int get aggregatePieceCount {
     if (services != null && services!.isNotEmpty) {

@@ -35,6 +35,28 @@ class OrderSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            children: [
+              const Icon(
+                Icons.receipt_long_rounded,
+                size: 16,
+                color: AppColors.greyText,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                order.displayOrderID != null
+                    ? 'ORDER #RIN-${order.displayOrderID}'
+                    : 'ORDER ID UNAVAILABLE',
+                style: AppTextStyles.smallTextStyle(context).copyWith(
+                  color: AppColors.greyText,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
@@ -94,13 +116,23 @@ class OrderSummaryCard extends StatelessWidget {
                 label: 'Service',
                 value: order.serviceId?.name ?? 'Standard',
               ),
-              _buildVerticalDivider(),
-              _buildStatItem(
-                context,
-                icon: Icons.checkroom_outlined,
-                label: 'Quantity',
-                value: _quantityValue(order),
-              ),
+              if (order.isPerPiece) ...[
+                _buildVerticalDivider(),
+                _buildStatItem(
+                  context,
+                  icon: Icons.checkroom_outlined,
+                  label: 'Quantity',
+                  value: _quantityValue(order),
+                ),
+              ] else if (_weightValue(order) != null) ...[
+                _buildVerticalDivider(),
+                _buildStatItem(
+                  context,
+                  icon: Icons.scale_outlined,
+                  label: 'Weight',
+                  value: _weightValue(order)!,
+                ),
+              ],
             ],
           ),
           if (order.isPerPiece) ...[
@@ -124,6 +156,12 @@ class OrderSummaryCard extends StatelessWidget {
     final raw = order.totalNoOfClothes;
     if (raw != null && raw.isNotEmpty) return '$raw pcs';
     return '--';
+  }
+
+  String? _weightValue(OrderDetailsEntity order) {
+    final raw = order.totalWeightKg;
+    if (raw == null || raw.isEmpty) return null;
+    return '$raw kg';
   }
 
   Widget _buildVerticalDivider() {
