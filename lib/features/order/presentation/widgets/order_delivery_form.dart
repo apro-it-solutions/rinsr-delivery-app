@@ -49,7 +49,6 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
           OrderItemizedList(
             services: widget.order.services,
             fallbackItems: widget.order.selectedClothingItems,
-            showPrices: true,
             collapsible: true,
           ),
         ],

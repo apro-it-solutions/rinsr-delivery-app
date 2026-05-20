@@ -115,10 +115,10 @@ class PayoutSummarySection extends StatelessWidget {
             ),
             Expanded(
               child: _StatCard(
-                label: 'Pending',
-                value: _money(summary?.totalPending),
-                accent: const Color(0xffB45309),
-                icon: Icons.schedule,
+                label: 'Distance',
+                value: _km(summary?.totalDistanceKm),
+                accent: const Color(0xff2563EB),
+                icon: Icons.route_outlined,
               ),
             ),
           ],
@@ -129,25 +129,12 @@ class PayoutSummarySection extends StatelessWidget {
           children: [
             Expanded(
               child: _StatCard(
-                label: 'Distance',
-                value: _km(summary?.totalDistanceKm),
-                accent: const Color(0xff2563EB),
-                icon: Icons.route_outlined,
-              ),
-            ),
-            Expanded(
-              child: _StatCard(
                 label: 'Days worked',
                 value: '${summary?.daysWorked ?? 0}',
                 accent: const Color(0xff7C3AED),
                 icon: Icons.calendar_today_outlined,
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
             Expanded(
               child: _StatCard(
                 label: 'Completed orders',
@@ -156,7 +143,6 @@ class PayoutSummarySection extends StatelessWidget {
                 icon: Icons.local_shipping_outlined,
               ),
             ),
-            const Expanded(child: SizedBox()),
           ],
         ),
       ],

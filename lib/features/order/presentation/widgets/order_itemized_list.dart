@@ -4,13 +4,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 
-/// Renders a per_piece order's items grouped by service. Used in the pickup
-/// checklist (showPrices false) and on the drop-off leg / order summary
-/// (showPrices true).
+/// Renders a per_piece order's items grouped by service, showing item names
+/// and quantities only. Pricing is intentionally not displayed to the
+/// delivery agent.
 class OrderItemizedList extends StatefulWidget {
   final List<ServiceLineEntity>? services;
   final List<ServiceItemEntity>? fallbackItems;
-  final bool showPrices;
   final String emptyMessage;
   final bool collapsible;
   final int collapsedItemLimit;
@@ -19,7 +18,6 @@ class OrderItemizedList extends StatefulWidget {
     super.key,
     required this.services,
     this.fallbackItems,
-    this.showPrices = false,
     this.emptyMessage = 'No items in this order.',
     this.collapsible = false,
     this.collapsedItemLimit = 3,
@@ -41,7 +39,6 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
             (s) => _GroupedServiceLine(
               serviceName: s.serviceName ?? 'Service',
               items: s.items ?? const [],
-              subtotal: s.subtotal,
             ),
           )
           .toList();
@@ -51,7 +48,6 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
         _GroupedServiceLine(
           serviceName: 'Items',
           items: fallback,
-          subtotal: null,
         ),
       ];
     }
@@ -70,11 +66,7 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
     for (final g in groups) {
       if (remaining <= 0) {
         capped.add(
-          _GroupedServiceLine(
-            serviceName: g.serviceName,
-            items: const [],
-            subtotal: g.subtotal,
-          ),
+          _GroupedServiceLine(serviceName: g.serviceName, items: const []),
         );
         continue;
       }
@@ -84,21 +76,10 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
         _GroupedServiceLine(
           serviceName: g.serviceName,
           items: g.items.sublist(0, take),
-          subtotal: g.subtotal,
         ),
       );
     }
     return capped;
-  }
-
-  num _aggregateTotal(List<_GroupedServiceLine> groups) {
-    return groups.fold<num>(
-      0,
-      (sum, g) =>
-          sum +
-          (g.subtotal ??
-              g.items.fold<num>(0, (s, i) => s + i.computedLineTotal)),
-    );
   }
 
   int _aggregatePieces(List<_GroupedServiceLine> groups) {
@@ -125,7 +106,6 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
     }
 
     final pieces = _aggregatePieces(groups);
-    final total = _aggregateTotal(groups);
     final totalItems = groups.fold<int>(0, (sum, g) => sum + g.items.length);
     final shouldCollapse =
         widget.collapsible &&
@@ -199,34 +179,9 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
           const Divider(height: 1),
           for (final group in visibleGroups) ...[
             _ServiceHeader(name: group.serviceName),
-            for (final item in group.items)
-              _ItemRow(item: item, showPrices: widget.showPrices),
-            if (widget.showPrices && group.subtotal != null && !shouldCollapse)
-              _SubtotalRow(label: 'Subtotal', amount: group.subtotal!),
+            for (final item in group.items) _ItemRow(item: item),
             const Divider(height: 1),
           ],
-          if (widget.showPrices && !shouldCollapse)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-              child: Row(
-                children: [
-                  Text(
-                    'Total',
-                    style: AppTextStyles.mediumTextStyle(
-                      context,
-                    ).copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '₹${_formatNum(total)}',
-                    style: AppTextStyles.mediumTextStyle(context).copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
@@ -236,11 +191,9 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
 class _GroupedServiceLine {
   final String serviceName;
   final List<ServiceItemEntity> items;
-  final num? subtotal;
   const _GroupedServiceLine({
     required this.serviceName,
     required this.items,
-    required this.subtotal,
   });
 }
 
@@ -268,14 +221,11 @@ class _ServiceHeader extends StatelessWidget {
 
 class _ItemRow extends StatelessWidget {
   final ServiceItemEntity item;
-  final bool showPrices;
-  const _ItemRow({required this.item, required this.showPrices});
+  const _ItemRow({required this.item});
 
   @override
   Widget build(BuildContext context) {
     final qty = item.quantity ?? 0;
-    final ppp = item.pricePerPiece;
-    final lineTotal = item.computedLineTotal;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -289,25 +239,11 @@ class _ItemRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.itemName ?? 'Item',
-                  style: AppTextStyles.mediumTextStyle(
-                    context,
-                  ).copyWith(fontWeight: FontWeight.w600),
-                ),
-                if (showPrices && ppp != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '₹${_formatNum(ppp)}/pc',
-                    style: AppTextStyles.smallTextStyle(
-                      context,
-                    ).copyWith(color: AppColors.greyText),
-                  ),
-                ],
-              ],
+            child: Text(
+              item.itemName ?? 'Item',
+              style: AppTextStyles.mediumTextStyle(
+                context,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(width: 10),
@@ -317,56 +253,8 @@ class _ItemRow extends StatelessWidget {
               context,
             ).copyWith(fontWeight: FontWeight.w600),
           ),
-          if (showPrices) ...[
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 70,
-              child: Text(
-                '₹${_formatNum(lineTotal)}',
-                textAlign: TextAlign.right,
-                style: AppTextStyles.mediumTextStyle(
-                  context,
-                ).copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
-}
-
-class _SubtotalRow extends StatelessWidget {
-  final String label;
-  final num amount;
-  const _SubtotalRow({required this.label, required this.amount});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.smallTextStyle(
-              context,
-            ).copyWith(color: AppColors.greyText),
-          ),
-          const Spacer(),
-          Text(
-            '₹${_formatNum(amount)}',
-            style: AppTextStyles.smallTextStyle(
-              context,
-            ).copyWith(fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-String _formatNum(num n) {
-  if (n == n.truncateToDouble()) return n.toInt().toString();
-  return n.toStringAsFixed(2);
 }

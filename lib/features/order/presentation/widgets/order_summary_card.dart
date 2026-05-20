@@ -41,7 +41,7 @@ class OrderSummaryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'ESTIMATED VALUE',
+                    order.isPerPiece ? 'TOTAL VALUE' : 'ESTIMATED VALUE',
                     style: AppTextStyles.smallTextStyle(context).copyWith(
                       color: AppColors.greyText,
                       fontSize: 10,
@@ -108,7 +108,6 @@ class OrderSummaryCard extends StatelessWidget {
             OrderItemizedList(
               services: order.services,
               fallbackItems: order.selectedClothingItems,
-              showPrices: true,
               collapsible: true,
             ),
           ],

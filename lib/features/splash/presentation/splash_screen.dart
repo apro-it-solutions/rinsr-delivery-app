@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import '../../../core/constants/app_images.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/constants/app_animations.dart';
 import '../../../core/constants/constants.dart';
 import '../../auth/presentation/auth_router.dart';
 import '../../home/presentation/home_router.dart';
@@ -14,19 +14,31 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
-    _navigateToNextScreen();
+
+    _controller = AnimationController(vsync: this);
+    _controller.addStatusListener(_onAnimationStatus);
+  }
+
+  void _onAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      _navigateToNextScreen();
+    }
   }
 
   Future<void> _navigateToNextScreen() async {
+    if (_navigated) return;
+    _navigated = true;
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(AppConstants.kToken);
-
-    // Add a small delay to show the splash screen
-    await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
@@ -40,11 +52,26 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.removeStatusListener(_onAnimationStatus);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        alignment: Alignment.center,
-        child: SvgPicture.asset(AppImages.logo, fit: BoxFit.cover),
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Lottie.asset(
+          AppAnimations.splash,
+          controller: _controller,
+          onLoaded: (composition) {
+            _controller
+              ..duration = composition.duration
+              ..forward();
+          },
+        ),
       ),
     );
   }

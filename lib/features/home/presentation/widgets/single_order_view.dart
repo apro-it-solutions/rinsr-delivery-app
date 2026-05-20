@@ -550,7 +550,6 @@ class _SingleOrderViewState extends State<SingleOrderView> {
         ? order.aggregatePieceCount.toString()
         : (order.totalNoOfClothes ?? '0');
     final weightValue = order.totalWeightKg ?? '';
-    final totalPrice = order.totalPrice ?? order.estimateTotalPrice ?? 0;
     final hasHeavy = order.heavyItems != null && order.heavyItems == 'yes';
 
     return Container(
@@ -588,15 +587,6 @@ class _SingleOrderViewState extends State<SingleOrderView> {
                     Icons.local_laundry_service_outlined,
                     'Items',
                     '$itemCount pcs',
-                  ),
-                ),
-                Container(width: 1, height: 40, color: AppColors.dividerColor),
-                Expanded(
-                  child: _buildDetailItem(
-                    context,
-                    Icons.currency_rupee,
-                    'Total',
-                    '₹$totalPrice',
                   ),
                 ),
               ],
