@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/enums.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
@@ -15,6 +16,11 @@ class OrderSummaryCard extends StatelessWidget {
     final isPaid = order.paymentStatus?.toLowerCase() == 'paid';
     final paymentStatusColor = isPaid ? Colors.green : Colors.orange;
     final paymentStatusText = order.paymentStatus?.toUpperCase() ?? 'PENDING';
+
+    // Quantity + itemized preview are only meaningful before the agent has
+    // accepted/picked up. After acceptance the estimated counts become
+    // stale (actual count is captured in the pickup form), so we hide them.
+    final isPreAcceptance = order.computedStatus == OrderStatus.scheduled;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -116,7 +122,7 @@ class OrderSummaryCard extends StatelessWidget {
                 label: 'Service',
                 value: order.serviceId?.name ?? 'Standard',
               ),
-              if (order.isPerPiece) ...[
+              if (order.isPerPiece && isPreAcceptance) ...[
                 _buildVerticalDivider(),
                 _buildStatItem(
                   context,
@@ -124,7 +130,7 @@ class OrderSummaryCard extends StatelessWidget {
                   label: 'Quantity',
                   value: _quantityValue(order),
                 ),
-              ] else if (_weightValue(order) != null) ...[
+              ] else if (!order.isPerPiece && _weightValue(order) != null) ...[
                 _buildVerticalDivider(),
                 _buildStatItem(
                   context,
@@ -135,7 +141,7 @@ class OrderSummaryCard extends StatelessWidget {
               ],
             ],
           ),
-          if (order.isPerPiece) ...[
+          if (order.isPerPiece && isPreAcceptance) ...[
             const SizedBox(height: 16),
             OrderItemizedList(
               services: order.services,

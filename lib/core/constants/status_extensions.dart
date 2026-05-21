@@ -71,8 +71,15 @@ extension OrderStatusExtension on OrderStatus {
       case OrderStatus.outForDelivery:
         return DeliveryAgentStatus.transit;
 
-      // DELIVERED/PROCESSING PHASE
+      // RETURN-LEG READY PHASE
+      // `ready` (backend: post-washing) marks the return pickup as available
+      // and must surface as Pending so any eligible agent can accept it —
+      // grouping it under "Delivered" hid return orders from every agent
+      // except whoever did the forward leg.
       case OrderStatus.ready:
+        return DeliveryAgentStatus.accepted;
+
+      // DELIVERED/PROCESSING PHASE
       case OrderStatus.vendorPickedUp:
       case OrderStatus.vendorReturning:
       case OrderStatus.processing:

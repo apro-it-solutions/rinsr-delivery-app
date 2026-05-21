@@ -79,9 +79,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Allow back navigation when the order is in a finished state — the
+    // active-flow screens stay locked (canPop:false) so the agent can't
+    // accidentally dismiss a pickup mid-step.
+    final allowBack =
+        widget.order.computedStatus == OrderStatus.delivered ||
+        widget.order.computedStatus == OrderStatus.cancelled;
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: allowBack,
         title: const Text('Order Details'),
       ),
       body: RefreshIndicator(
@@ -108,7 +114,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           }
         },
         child: PopScope(
-          canPop: false,
+          canPop: allowBack,
           child: BlocListener<OrderBloc, OrderState>(
             listener: (context, state) {
               if (state is OrderUpdated) {

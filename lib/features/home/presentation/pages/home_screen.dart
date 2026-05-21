@@ -71,11 +71,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   bool _isOrderTerminal(OrderStatus status) {
+    // `ready` is intentionally NOT terminal — the order is waiting for a
+    // return pickup, which is still in scope for the agent flow.
     return status == OrderStatus.cancelled ||
         status == OrderStatus.delivered ||
-        status == OrderStatus.processing || // Added
-        status == OrderStatus.washing || // Added
-        status == OrderStatus.ready; // Added
+        status == OrderStatus.processing ||
+        status == OrderStatus.washing;
   }
 
   bool hasAccepted(OrderDetailsEntity order) {
@@ -89,12 +90,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // before we can lock them into the detail screen. The earlier
     // pickup-leg acceptance does not count here.
     final isReturnLeg =
+        status == OrderStatus.ready ||
         status == OrderStatus.readyToPickupFromHub ||
         status == OrderStatus.outForDelivery;
     if (isReturnLeg) {
       return updates.delivered?.any(
-            (u) =>
-                u.deliveryId == agentId && u.status == 'accepted_for_return',
+            (u) => u.deliveryId == agentId && u.status == 'accepted_for_return',
           ) ??
           false;
     }

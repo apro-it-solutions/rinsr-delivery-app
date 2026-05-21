@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -30,6 +31,7 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _pieceCountController = TextEditingController();
   XFile? photo;
+  String? _pieceCountError;
 
   bool get _isPerPiece => widget.order.isPerPiece;
 
@@ -235,10 +237,12 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
               final String submitValue;
               if (_isPerPiece) {
                 final countText = _pieceCountController.text.trim();
-                if (countText.isEmpty) {
+                final error = _validatePieceCount(countText);
+                if (error != null) {
+                  setState(() => _pieceCountError = error);
                   AppAlerts.showErrorSnackBar(
                     context: context,
-                    message: 'Please enter the total piece count',
+                    message: error,
                   );
                   return;
                 }
@@ -286,6 +290,14 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
     );
   }
 
+  String? _validatePieceCount(String input) {
+    if (input.isEmpty) return 'Please enter the total piece count';
+    final parsed = int.tryParse(input);
+    if (parsed == null) return 'Piece count must be a whole number';
+    if (parsed <= 0) return 'Piece count must be greater than zero';
+    return null;
+  }
+
   Widget _buildPieceCountSection(BuildContext context) {
     final expectedPieces = widget.order.aggregatePieceCount;
     return Column(
@@ -314,7 +326,7 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.checklist_rtl,
+                    Icons.checkroom_outlined,
                     size: 32,
                     color: AppColors.primary,
                   ),
@@ -342,6 +354,12 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
                 TextField(
                   controller: _pieceCountController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (_) {
+                    if (_pieceCountError != null) {
+                      setState(() => _pieceCountError = null);
+                    }
+                  },
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -350,6 +368,7 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
                     labelText: 'Total pieces',
                     labelStyle: const TextStyle(color: AppColors.primary),
                     hintText: '0',
+                    errorText: _pieceCountError,
                     prefixIcon: const Icon(Icons.format_list_numbered),
                     suffixText: 'pcs',
                     filled: true,

@@ -7,6 +7,7 @@ import '../../data/models/get_orders_model/delivery_updates.dart';
 import '../../domain/usecases/get_orders.dart';
 import '../../../order/domain/entities/accept_order_response_entity.dart';
 
+import '../../../../core/constants/enums.dart';
 import '../../../../core/constants/status_extensions.dart';
 import '../../../order/domain/entities/accept_order_params.dart';
 import '../../../order/domain/usecases/accept_order.dart';
@@ -43,12 +44,35 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
                 order.vendorStatus != 'awaiting_vendor';
             if (!vendorAccepted) return false;
 
-            final isUnassigned =
-                order.pickedUpDeliveryPartnerId == null &&
-                order.orderReturnedDeliveryPartner == null;
+            // The return leg has its own assignment slot. After washing, the
+            // forward-leg agent's id stays in `pickedUpDeliveryPartnerId` and
+            // `currentDeliveryPartnerId`, so a naive `pickedUpDeliveryPartnerId == null`
+            // check hides every return-pickup order from every other agent.
+            final status = order.computedStatus;
+            // `ready` (post-washing) is the start of the return leg in the
+            // production backend; the readyToPickupFromHub/outForDelivery
+            // names cover the alternate mapping path.
+            final isReturnLeg =
+                status == OrderStatus.ready ||
+                status == OrderStatus.readyToPickupFromHub ||
+                status == OrderStatus.outForDelivery;
+
+            final agentId = event.agentId;
+            final updates = order.deliveryUpdates;
+            final hasAcceptedReturn =
+                updates?.delivered?.any(
+                  (u) =>
+                      u.deliveryId == agentId &&
+                      u.status == 'accepted_for_return',
+                ) ??
+                false;
+
+            final isUnassigned = isReturnLeg
+                ? order.orderReturnedDeliveryPartner == null
+                : order.pickedUpDeliveryPartnerId == null;
             final isPickedByMe =
-                order.deliveryUpdates?.currentDeliveryPartnerId ==
-                event.agentId;
+                updates?.currentDeliveryPartnerId == agentId ||
+                hasAcceptedReturn;
             return isUnassigned || isPickedByMe;
           }).toList() ??
           [];

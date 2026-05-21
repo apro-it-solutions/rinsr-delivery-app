@@ -138,7 +138,7 @@ class _OrderItemizedListState extends State<OrderItemizedList> {
               child: Row(
                 children: [
                   const Icon(
-                    Icons.checklist_rtl,
+                    Icons.checkroom_outlined,
                     color: AppColors.primary,
                     size: 20,
                   ),

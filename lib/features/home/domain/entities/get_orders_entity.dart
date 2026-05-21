@@ -112,21 +112,44 @@ class OrderDetailsEntity extends Equatable {
       pricingType == null;
 
   // Statuses where the agent is no longer actively involved with the order.
+  // `ready` is intentionally NOT here: the order is sitting at the vendor
+  // waiting for a return pickup, which is the next phase the agent can claim.
   bool get isTerminalForAgent {
     final s = computedStatus;
     return s == OrderStatus.cancelled ||
         s == OrderStatus.delivered ||
         s == OrderStatus.processing ||
-        s == OrderStatus.washing ||
-        s == OrderStatus.ready;
+        s == OrderStatus.washing;
+  }
+
+  bool get isReturnLegStatus {
+    final s = computedStatus;
+    return s == OrderStatus.ready ||
+        s == OrderStatus.readyToPickupFromHub ||
+        s == OrderStatus.outForDelivery;
+  }
+
+  bool hasAcceptedReturnLeg(String agentId) {
+    return deliveryUpdates?.delivered?.any(
+          (u) =>
+              u.deliveryId == agentId && u.status == 'accepted_for_return',
+        ) ??
+        false;
   }
 
   // True if [agentId] is currently the assigned delivery partner and the
   // order is still in-progress (not terminal). Used to block accepting new
   // orders while one is already in flight.
+  //
+  // On the return leg, the forward-leg agent's id can linger in
+  // `currentDeliveryPartnerId` after washing. We don't want that to block
+  // them from accepting unrelated forward-leg orders, so the return leg
+  // only counts as active once they've explicitly accepted the return.
   bool isActiveForAgent(String agentId) {
     if (deliveryUpdates?.currentDeliveryPartnerId != agentId) return false;
-    return !isTerminalForAgent;
+    if (isTerminalForAgent) return false;
+    if (isReturnLegStatus && !hasAcceptedReturnLeg(agentId)) return false;
+    return true;
   }
 
   int get aggregatePieceCount {

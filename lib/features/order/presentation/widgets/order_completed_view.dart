@@ -12,7 +12,9 @@ class OrderCompletedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final orderId = order.orderId;
+    final displayOrderId = order.displayOrderID != null
+        ? 'RIN-${order.displayOrderID}'
+        : 'N/A';
     return Container(
       color: Colors.white,
       child: SingleChildScrollView(
@@ -72,7 +74,7 @@ class OrderCompletedView extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      orderId ?? 'N/A',
+                      displayOrderId,
                       style: AppTextStyles.mediumTextStyle(context).copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.headerTextColor,
