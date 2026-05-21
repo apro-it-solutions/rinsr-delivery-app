@@ -8,6 +8,7 @@ import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.d
 import '../../../../core/services/location_service.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../domain/entities/update_order_params.dart';
+import '../../domain/usecases/mark_payment_received.dart';
 import '../../domain/usecases/notify_user.dart';
 import '../../domain/usecases/update_order.dart';
 part 'order_event.dart';
@@ -16,6 +17,7 @@ part 'order_state.dart';
 class OrderBloc extends Bloc<OrderEvent, OrderState> {
   final UpdateOrder updateOrder;
   final NotifyUser notifyUser;
+  final MarkPaymentReceived markPaymentReceived;
   final LocationService locationService;
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<List<int>>? _weightSubscription;
@@ -24,6 +26,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   OrderBloc({
     required this.updateOrder,
     required this.notifyUser,
+    required this.markPaymentReceived,
     required this.locationService,
     required this.bluetoothScannerService,
   }) : super(OrderInitial()) {
@@ -39,6 +42,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<ConfirmHubReturnDrop>(_onConfirmHubReturnDrop);
     on<StartDelivery>(_onStartDelivery);
     on<SubmitProofOfDelivery>(_onSubmitProofOfDelivery);
+    on<MarkCashPaymentReceived>(_onMarkCashPaymentReceived);
     on<NotifyUserEvent>(_onNotifyUserEvent);
     on<StartWeightReading>(_onStartWeightReading);
     on<StopWeightReading>(_onStopWeightReading);
@@ -285,6 +289,40 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
                 status: 'delivered',
                 photoPath: event.photoPath,
               ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _onMarkCashPaymentReceived(
+    MarkCashPaymentReceived event,
+    Emitter<OrderState> emit,
+  ) async {
+    if (state is OrderLoaded) {
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
+      if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
+        final result = await markPaymentReceived(currentOrder.orderId!);
+        result.fold(
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(OrderError(failure.message));
+          },
+          (response) => emit(
+            OrderLoaded(
+              currentOrder.copyWith(
+                paymentStatus: response.paymentStatus ?? 'paid',
+              ),
+              currentLocation: currentLoaded.currentLocation,
+              distanceInMeters: currentLoaded.distanceInMeters,
+              locationError: currentLoaded.locationError,
+              isLocationLoading: currentLoaded.isLocationLoading,
+              weight: currentLoaded.weight,
+              isWeightLocked: currentLoaded.isWeightLocked,
+              isSubmitting: false,
             ),
           ),
         );

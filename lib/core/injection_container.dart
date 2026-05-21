@@ -23,6 +23,7 @@ import '../features/order/data/data_sources/order_remote_data_source.dart';
 import '../features/order/data/repositories/order_repositories_impl.dart';
 import '../features/order/domain/repositories/order_repository.dart';
 import '../features/order/domain/usecases/accept_order.dart';
+import '../features/order/domain/usecases/mark_payment_received.dart';
 import '../features/order/domain/usecases/notify_user.dart';
 import '../features/order/domain/usecases/update_order.dart';
 import '../features/profile/data/repositories/profile_repository_impl.dart';
@@ -80,6 +81,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetRatings(sl()));
   sl.registerLazySingleton(() => NotifyUser(sl()));
   sl.registerLazySingleton(() => AcceptOrder(sl()));
+  sl.registerLazySingleton(() => MarkPaymentReceived(sl()));
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
@@ -136,6 +138,7 @@ Future<void> init() async {
     () => OrderBloc(
       updateOrder: sl(),
       notifyUser: sl(),
+      markPaymentReceived: sl(),
       locationService: sl(),
       bluetoothScannerService: sl(),
     ),

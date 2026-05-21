@@ -8,4 +8,6 @@ class ApiUrls {
   static String getRatings(String partnerId) =>
       'ratings/delivery-partner/$partnerId';
   static const String notifyUser = 'delivery-notifications/notify-user';
+  static String recordCashPayment(String orderId) =>
+      'orders/$orderId/record-cash-payment';
 }

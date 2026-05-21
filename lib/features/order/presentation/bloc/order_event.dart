@@ -58,6 +58,8 @@ class SubmitProofOfDelivery extends OrderEvent {
   List<Object> get props => [photoPath];
 }
 
+class MarkCashPaymentReceived extends OrderEvent {}
+
 class NotifyUserEvent extends OrderEvent {
   final String orderId;
 

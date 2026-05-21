@@ -183,6 +183,25 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
               ),
             ),
           ),
+          const SizedBox(height: 4),
+          Center(
+            child: OutlinedButton.icon(
+              onPressed: () => _confirmMarkCashReceived(context),
+              icon: const Icon(Icons.payments_outlined),
+              label: const Text('Mark Cash Payment Received'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 8),
         ],
         ContinueButton(
@@ -208,6 +227,35 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
   }
 
   bool _isCheckingPayment = false;
+
+  Future<void> _confirmMarkCashReceived(BuildContext context) async {
+    final amount =
+        widget.order.estimateTotalPrice ?? widget.order.totalPrice ?? 0;
+    final orderBloc = context.read<OrderBloc>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Mark Payment Received?'),
+        content: Text(
+          'Confirm that you collected ₹$amount in cash from the customer. '
+          'This will mark the order as paid.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      orderBloc.add(MarkCashPaymentReceived());
+    }
+  }
 
   Future<void> _checkPaymentStatus() async {
     setState(() {

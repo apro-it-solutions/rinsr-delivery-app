@@ -57,6 +57,7 @@ class MyApp extends StatelessWidget {
             bluetoothScannerService: di.sl(),
             updateOrder: di.sl(),
             notifyUser: di.sl(),
+            markPaymentReceived: di.sl(),
             locationService: di.sl(), // Inject LocationService
           ),
         ),

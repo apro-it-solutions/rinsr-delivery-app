@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/constants/constants.dart';
 import '../models/accept_order_response_model/accept_order_response_model.dart';
 import '../models/notify_users_response_model/notify_users_response_model.dart';
+import '../models/mark_payment_received_response_model.dart';
 import '../../../../core/constants/api_urls.dart';
 import '../../../../core/services/shared_preferences_service.dart';
 import '../models/update_order_model/update_order_model.dart';
@@ -17,6 +18,7 @@ abstract class OrderRemoteDataSource {
   });
   Future<NotifyUsersResponseModel> notifyUsers(String orderId);
   Future<AcceptOrderResponseModel> acceptOrder(String orderId, String type);
+  Future<MarkPaymentReceivedResponseModel> markPaymentReceived(String orderId);
 }
 
 class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
@@ -88,5 +90,15 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       data: {'type': type},
     );
     return AcceptOrderResponseModel.fromJson(response.data);
+  }
+
+  @override
+  Future<MarkPaymentReceivedResponseModel> markPaymentReceived(
+    String orderId,
+  ) async {
+    final Response response = await dio.patch(
+      ApiUrls.recordCashPayment(orderId),
+    );
+    return MarkPaymentReceivedResponseModel.fromJson(response.data);
   }
 }
