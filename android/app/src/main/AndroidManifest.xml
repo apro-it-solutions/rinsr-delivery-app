@@ -1,12 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/> 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/> 
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -14,6 +15,18 @@
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- Strip permissions that image_picker merges in transitively. We use
+         the camera (pickup/delivery photos) and the Android Photo Picker
+         (profile image upload); neither needs broad media access. Removing
+         these resolves the Play Console "undeclared photo and video
+         permissions" flag and forces image_picker to fall back to the photo
+         picker on Android 13+. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+        tools:node="remove" />
     <application
         android:label="Rinsr Delivery"
         android:name="${applicationName}"

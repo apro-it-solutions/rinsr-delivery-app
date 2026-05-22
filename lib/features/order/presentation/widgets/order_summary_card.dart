@@ -79,7 +79,7 @@ class OrderSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '₹ ${order.estimateTotalPrice ?? 0}',
+                    '₹ ${order.totalPrice ?? 0}',
                     style: AppTextStyles.largeTextStyle(context).copyWith(
                       color: AppColors.primary,
                       fontSize: 24,
