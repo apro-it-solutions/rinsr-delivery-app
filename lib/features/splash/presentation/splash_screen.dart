@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/constants/app_animations.dart';
+import '../../../core/constants/app_images.dart';
 import '../../../core/constants/constants.dart';
 import '../../auth/presentation/auth_router.dart';
 import '../../home/presentation/home_router.dart';
@@ -14,23 +15,16 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+class _SplashScreenState extends State<SplashScreen> {
+  static const Duration _splashDuration = Duration(seconds: 3);
+
+  Timer? _timer;
   bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = AnimationController(vsync: this);
-    _controller.addStatusListener(_onAnimationStatus);
-  }
-
-  void _onAnimationStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      _navigateToNextScreen();
-    }
+    _timer = Timer(_splashDuration, _navigateToNextScreen);
   }
 
   Future<void> _navigateToNextScreen() async {
@@ -53,24 +47,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _controller.removeStatusListener(_onAnimationStatus);
-    _controller.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Lottie.asset(
-          AppAnimations.splash,
-          controller: _controller,
-          onLoaded: (composition) {
-            _controller
-              ..duration = composition.duration
-              ..forward();
-          },
+      backgroundColor: const Color(0xFF00AB98),
+      body: SizedBox.expand(
+        child: Image.asset(
+          AppImages.splash,
+          fit: BoxFit.cover,
         ),
       ),
     );

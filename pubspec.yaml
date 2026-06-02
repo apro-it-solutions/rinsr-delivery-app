@@ -2,7 +2,7 @@ name: rinsr_delivery_partner
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.0+4
+version: 1.0.0+9
 
 environment:
   sdk: ^3.9.2
@@ -42,7 +42,6 @@ dependencies:
   open_filex: ^4.5.0
   permission_handler: ^11.3.1
   video_player: ^2.9.2
-  lottie: ^3.1.3
 
 dev_dependencies:
   flutter_test:
@@ -65,5 +64,4 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - assets/animations/
     - assets/adi-registration.properties
