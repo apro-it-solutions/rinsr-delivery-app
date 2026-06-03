@@ -10,4 +10,5 @@ class ApiUrls {
   static const String notifyUser = 'delivery-notifications/notify-user';
   static String recordCashPayment(String orderId) =>
       'orders/$orderId/record-cash-payment';
+  static String cancelOrder(String orderId) => 'orders/$orderId/cancel';
 }

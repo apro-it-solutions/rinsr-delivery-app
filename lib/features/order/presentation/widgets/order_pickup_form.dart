@@ -6,9 +6,11 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/app_alerts.dart';
+import '../../../../core/utils/launcher_utils.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../bloc/order_bloc.dart';
 import '../pages/barcode_scanner_screen.dart';
+import 'order_info_card.dart';
 import 'order_itemized_list.dart';
 
 class OrderPickupForm extends StatefulWidget {
@@ -35,6 +37,47 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
 
   bool get _isPerPiece => widget.order.isPerPiece;
 
+  // Issue 10: track customer call attempts on this post-arrival stage too, so
+  // the agent can cancel an unreachable customer without going back a screen.
+  static const int _cancelCallThreshold = 5;
+  int _customerCallAttempts = 0;
+
+  void _callCustomer() {
+    LauncherUtils.launchPhone(context, widget.order.userPhone);
+    setState(() => _customerCallAttempts++);
+  }
+
+  Future<void> _confirmCancelOrder() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Order?'),
+        content: const Text(
+          'The customer has not answered after multiple calls. '
+          'Cancelling will end this pickup and return you to home.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Trying'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Cancel Order'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      context.read<OrderBloc>().add(
+        const CancelOrderEvent(
+          reason: 'Customer not answering calls during pickup',
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _weightController.dispose();
@@ -59,6 +102,56 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Customer contact — kept on this second stage so the agent can still
+        // call the customer after sliding past "Arrived at Location".
+        if (widget.order.userName.isNotEmpty)
+          OrderInfoCard(
+            title: 'Customer Name',
+            content: widget.order.userName,
+            icon: Icons.person,
+          ),
+        if (widget.order.userPhone.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          OrderInfoCard(
+            title: 'Customer Phone',
+            content: widget.order.userPhone,
+            icon: Icons.phone,
+            onActionTap: _callCustomer,
+            actionIcon: Icons.call,
+          ),
+        ],
+        if (widget.order.userAddress.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          OrderInfoCard(
+            title: 'Pickup Address',
+            content: widget.order.userAddress,
+            icon: Icons.location_on,
+            onActionTap: () =>
+                LauncherUtils.launchMaps(context, widget.order.userAddress),
+            actionIcon: Icons.map,
+          ),
+        ],
+        if (_customerCallAttempts >= _cancelCallThreshold) ...[
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _confirmCancelOrder,
+              icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+              label: const Text(
+                'Cancel Order (Customer Unreachable)',
+                style: TextStyle(color: Colors.red),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        const Divider(height: 24),
+
         // 1. Photo Section
         InkWell(
           onTap: () async {
@@ -295,6 +388,12 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
     final parsed = int.tryParse(input);
     if (parsed == null) return 'Piece count must be a whole number';
     if (parsed <= 0) return 'Piece count must be greater than zero';
+    // Block submitting a count that doesn't match what the order expected.
+    final expected = widget.order.aggregatePieceCount;
+    if (expected > 0 && parsed != expected) {
+      return 'Piece count must match the expected $expected '
+          '${expected == 1 ? 'piece' : 'pieces'}';
+    }
     return null;
   }
 
@@ -413,6 +512,7 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
       },
       builder: (context, state) {
         final isLocked = state is OrderLoaded && state.isWeightLocked;
+        final scaleError = state is OrderLoaded ? state.weightScaleError : null;
         return Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -450,6 +550,37 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey.shade600, height: 1.4),
                 ),
+                if (scaleError != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.bluetooth_disabled,
+                          color: Colors.orange.shade800,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            scaleError,
+                            style: TextStyle(
+                              color: Colors.orange.shade900,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 TextField(
                   controller: _weightController,

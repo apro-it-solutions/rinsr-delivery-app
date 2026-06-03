@@ -8,6 +8,7 @@ import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.d
 import '../../../../core/services/location_service.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../domain/entities/update_order_params.dart';
+import '../../domain/usecases/cancel_order.dart';
 import '../../domain/usecases/mark_payment_received.dart';
 import '../../domain/usecases/notify_user.dart';
 import '../../domain/usecases/update_order.dart';
@@ -18,15 +19,18 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   final UpdateOrder updateOrder;
   final NotifyUser notifyUser;
   final MarkPaymentReceived markPaymentReceived;
+  final CancelOrder cancelOrder;
   final LocationService locationService;
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<List<int>>? _weightSubscription;
+  StreamSubscription<BleScanFailure>? _weightFailureSubscription;
   final BluetoothScannerService bluetoothScannerService;
 
   OrderBloc({
     required this.updateOrder,
     required this.notifyUser,
     required this.markPaymentReceived,
+    required this.cancelOrder,
     required this.locationService,
     required this.bluetoothScannerService,
   }) : super(OrderInitial()) {
@@ -43,12 +47,43 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<StartDelivery>(_onStartDelivery);
     on<SubmitProofOfDelivery>(_onSubmitProofOfDelivery);
     on<MarkCashPaymentReceived>(_onMarkCashPaymentReceived);
+    on<CancelOrderEvent>(_onCancelOrder);
     on<NotifyUserEvent>(_onNotifyUserEvent);
     on<StartWeightReading>(_onStartWeightReading);
     on<StopWeightReading>(_onStopWeightReading);
     on<LockWeightReading>(_onLockWeightReading);
     on<UnlockWeightReading>(_onUnlockWeightReading);
     on<WeightReadingUpdated>(_onWeightReadingUpdated);
+    on<WeightScaleErrorEvent>(_onWeightScaleError);
+  }
+
+  void _listenWeightFailures() {
+    _weightFailureSubscription ??= bluetoothScannerService.failures.listen((
+      failure,
+    ) {
+      if (isClosed) return;
+      final message = switch (failure) {
+        BleScanFailure.permissionDenied =>
+          'Bluetooth permission denied. Enable "Nearby devices" in Settings, '
+              'or enter the weight manually.',
+        BleScanFailure.adapterOff =>
+          'Bluetooth is off. Turn it on to auto-read the scale, '
+              'or enter the weight manually.',
+        BleScanFailure.error =>
+          'Could not connect to the weight scale. '
+              'Enter the weight manually.',
+      };
+      add(WeightScaleErrorEvent(message));
+    });
+  }
+
+  void _onWeightScaleError(
+    WeightScaleErrorEvent event,
+    Emitter<OrderState> emit,
+  ) {
+    if (state is OrderLoaded) {
+      emit((state as OrderLoaded).copyWith(weightScaleError: event.message));
+    }
   }
 
   // Phase A Handlers
@@ -330,11 +365,55 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     }
   }
 
+  Future<void> _onCancelOrder(
+    CancelOrderEvent event,
+    Emitter<OrderState> emit,
+  ) async {
+    if (state is OrderLoaded) {
+      final currentLoaded = state as OrderLoaded;
+      final currentOrder = currentLoaded.order;
+      if (currentOrder.orderId != null) {
+        emit(currentLoaded.copyWith(isSubmitting: true));
+        final result = await cancelOrder(
+          CancelOrderParams(
+            orderId: currentOrder.orderId!,
+            reason: event.reason,
+          ),
+        );
+        result.fold(
+          (failure) {
+            emit(currentLoaded.copyWith(isSubmitting: false));
+            emit(OrderError(failure.message));
+          },
+          (response) => emit(
+            OrderUpdated(
+              currentOrder.copyWith(
+                status: 'cancelled',
+                cancelReason: event.reason,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   FutureOr<void> _onOrderLoadEvent(
     OrderLoadEvent event,
     Emitter<OrderState> emit,
   ) {
-    emit(OrderLoaded(event.order));
+    // Preserve already-computed location/distance state across refreshes.
+    // Pull-to-refresh re-dispatches OrderLoadEvent with a fresh order entity;
+    // emitting a bare OrderLoaded would reset distanceInMeters to null and make
+    // the distance/ETA vanish until the next GPS tick (OR_22). The position
+    // stream from InitLocationEvent stays subscribed, so keeping the prior
+    // location fields shows continuous distance while the order data updates.
+    final current = state;
+    if (current is OrderLoaded) {
+      emit(current.copyWith(order: event.order));
+    } else {
+      emit(OrderLoaded(event.order));
+    }
   }
 
   FutureOr<void> _onNotifyUserEvent(
@@ -449,6 +528,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   Future<void> close() {
     _positionSubscription?.cancel();
     _weightSubscription?.cancel();
+    _weightFailureSubscription?.cancel();
     return super.close();
   }
 
@@ -456,6 +536,20 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     StartWeightReading event,
     Emitter<OrderState> emit,
   ) {
+    // Begin every weighing session clean. The OrderBloc is shared for the whole
+    // order flow, so a weight/lock left over from a previous item would stay on
+    // screen and — because the live-reading listener is gated behind
+    // `!isWeightLocked` — block any new readings from the scale.
+    if (state is OrderLoaded) {
+      emit(
+        (state as OrderLoaded).copyWith(
+          clearWeight: true,
+          isWeightLocked: false,
+          clearWeightScaleError: true,
+        ),
+      );
+    }
+    _listenWeightFailures();
     if (_weightSubscription == null) {
       bluetoothScannerService.startScan();
       _weightSubscription = bluetoothScannerService.stream.listen((data) {
@@ -490,6 +584,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) {
     if (state is OrderLoaded) {
+      _listenWeightFailures();
       if (_weightSubscription == null) {
         bluetoothScannerService.startScan();
         _weightSubscription = bluetoothScannerService.stream.listen((data) {
@@ -505,7 +600,13 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     Emitter<OrderState> emit,
   ) {
     if (state is OrderLoaded) {
-      emit((state as OrderLoaded).copyWith(weight: event.weight));
+      // A live reading means the scale is reachable — clear any stale error.
+      emit(
+        (state as OrderLoaded).copyWith(
+          weight: event.weight,
+          clearWeightScaleError: true,
+        ),
+      );
     }
   }
 

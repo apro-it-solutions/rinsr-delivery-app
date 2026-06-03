@@ -546,9 +546,7 @@ class _SingleOrderViewState extends State<SingleOrderView> {
   Widget _buildOrderDetailsCard(BuildContext context) {
     final order = widget.order;
     final isPerPiece = order.isPerPiece;
-    final itemCount = isPerPiece
-        ? order.aggregatePieceCount.toString()
-        : (order.totalNoOfClothes ?? '0');
+    final itemCount = order.aggregatePieceCount.toString();
     final weightValue = order.totalWeightKg ?? '';
     final hasHeavy = order.heavyItems != null && order.heavyItems == 'yes';
 

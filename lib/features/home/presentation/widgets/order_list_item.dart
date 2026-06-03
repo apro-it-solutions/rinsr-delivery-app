@@ -474,7 +474,11 @@ class _OrderListItemState extends State<OrderListItem> {
     if (order.computedStatus == OrderStatus.delivered) {
       final deliveredAt = _deliveredAt(order);
       if (deliveredAt != null) {
-        return 'Delivered • ${_formatDate(deliveredAt)}';
+        // The status badge already says "Delivered"; prefixing the date label
+        // with "Delivered" too made the word appear twice on the same card.
+        // Show just the delivered timestamp here (keeps the OR_09 fix that
+        // reads the delivered time rather than createdAt).
+        return _formatDate(deliveredAt);
       }
     }
     return _formatDate(order.createdAt);

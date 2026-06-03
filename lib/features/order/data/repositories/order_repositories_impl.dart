@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/api_handler.dart';
 import '../../domain/entities/accept_order_response_entity.dart';
+import '../../domain/entities/cancel_order_response_entity.dart';
 import '../../domain/entities/mark_payment_received_response_entity.dart';
 import '../../domain/entities/notify_user_response_entity.dart';
 
@@ -75,6 +76,19 @@ class OrderRepositoriesImpl implements OrderRepository {
     }
     return await apiHandler.execute(() async {
       return await remoteDataSource.markPaymentReceived(orderId);
+    });
+  }
+
+  @override
+  Future<Either<Failure, CancelOrderResponseEntity>> cancelOrder(
+    String orderId,
+    String reason,
+  ) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+    return await apiHandler.execute(() async {
+      return await remoteDataSource.cancelOrder(orderId, reason);
     });
   }
 }

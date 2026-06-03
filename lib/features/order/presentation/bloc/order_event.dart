@@ -60,6 +60,17 @@ class SubmitProofOfDelivery extends OrderEvent {
 
 class MarkCashPaymentReceived extends OrderEvent {}
 
+/// Cancel the order from the delivery side (issue 10) — surfaced only after the
+/// agent has called the customer repeatedly without an answer.
+class CancelOrderEvent extends OrderEvent {
+  final String reason;
+
+  const CancelOrderEvent({required this.reason});
+
+  @override
+  List<Object> get props => [reason];
+}
+
 class NotifyUserEvent extends OrderEvent {
   final String orderId;
 
@@ -98,6 +109,15 @@ class LocationErrorEvent extends OrderEvent {
 }
 
 final class StartWeightReading extends OrderEvent {}
+
+final class WeightScaleErrorEvent extends OrderEvent {
+  final String message;
+
+  const WeightScaleErrorEvent(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
 
 final class WeightReadingUpdated extends OrderEvent {
   final double weight;

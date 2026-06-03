@@ -37,6 +37,47 @@ class _PhaseAViewState extends State<PhaseAView> {
   // 1: Pickup Details (Photo, Weight, Scan)
   int _currentStep = 0;
 
+  // Issue 10: once the agent has called the customer this many times without an
+  // answer, reveal a "Cancel Order" option for unreachable customers.
+  static const int _cancelCallThreshold = 5;
+  int _customerCallAttempts = 0;
+
+  void _callCustomer() {
+    LauncherUtils.launchPhone(context, widget.order.userPhone);
+    setState(() => _customerCallAttempts++);
+  }
+
+  Future<void> _confirmCancelOrder() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Order?'),
+        content: const Text(
+          'The customer has not answered after multiple calls. '
+          'Cancelling will end this pickup and return you to home.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Trying'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Cancel Order'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      context.read<OrderBloc>().add(
+        const CancelOrderEvent(
+          reason: 'Customer not answering calls during pickup',
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.order.computedStatus == OrderStatus.scheduled) {
@@ -74,10 +115,7 @@ class _PhaseAViewState extends State<PhaseAView> {
                   title: 'Customer Phone',
                   content: widget.order.userPhone,
                   icon: Icons.phone,
-                  onActionTap: () => LauncherUtils.launchPhone(
-                    context,
-                    widget.order.userPhone,
-                  ),
+                  onActionTap: _callCustomer,
                   actionIcon: Icons.call,
                 ),
               const SizedBox(height: 12),
@@ -109,6 +147,24 @@ class _PhaseAViewState extends State<PhaseAView> {
                 onActionTap: () =>
                     LauncherUtils.launchMaps(context, widget.order.userAddress),
               ),
+              if (_customerCallAttempts >= _cancelCallThreshold) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _confirmCancelOrder,
+                    icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                    label: const Text(
+                      'Cancel Order (Customer Unreachable)',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
             ],
           ),

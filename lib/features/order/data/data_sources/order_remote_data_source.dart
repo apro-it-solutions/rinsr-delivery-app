@@ -4,6 +4,7 @@ import '../../../../core/constants/constants.dart';
 import '../models/accept_order_response_model/accept_order_response_model.dart';
 import '../models/notify_users_response_model/notify_users_response_model.dart';
 import '../models/mark_payment_received_response_model.dart';
+import '../models/cancel_order_response_model.dart';
 import '../../../../core/constants/api_urls.dart';
 import '../../../../core/services/shared_preferences_service.dart';
 import '../models/update_order_model/update_order_model.dart';
@@ -19,6 +20,7 @@ abstract class OrderRemoteDataSource {
   Future<NotifyUsersResponseModel> notifyUsers(String orderId);
   Future<AcceptOrderResponseModel> acceptOrder(String orderId, String type);
   Future<MarkPaymentReceivedResponseModel> markPaymentReceived(String orderId);
+  Future<CancelOrderResponseModel> cancelOrder(String orderId, String reason);
 }
 
 class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
@@ -100,5 +102,22 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       ApiUrls.recordCashPayment(orderId),
     );
     return MarkPaymentReceivedResponseModel.fromJson(response.data);
+  }
+
+  @override
+  Future<CancelOrderResponseModel> cancelOrder(
+    String orderId,
+    String reason,
+  ) async {
+    final Response response = await dio.patch(
+      ApiUrls.cancelOrder(orderId),
+      data: {
+        'cancel_reason': reason,
+        'delivery_id': SharedPreferencesService.getString(
+          AppConstants.kAgentId,
+        ),
+      },
+    );
+    return CancelOrderResponseModel.fromJson(response.data);
   }
 }

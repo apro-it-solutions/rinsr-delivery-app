@@ -54,6 +54,7 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => OrderBloc(
+            cancelOrder: di.sl(),
             bluetoothScannerService: di.sl(),
             updateOrder: di.sl(),
             notifyUser: di.sl(),
