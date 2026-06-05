@@ -11,6 +11,7 @@ enum BleScanFailure { permissionDenied, adapterOff, error }
 class BluetoothScannerService {
   StreamSubscription? _subscription;
   StreamSubscription<BluetoothAdapterState>? _adapterSubscription;
+  StreamSubscription<bool>? _isScanningSubscription;
   // True between startScan() and stopScan(); lets the adapter-state listener
   // know whether a scan should (re)start when Bluetooth comes on.
   bool _scanRequested = false;
@@ -80,6 +81,20 @@ class BluetoothScannerService {
         _failures.add(BleScanFailure.adapterOff);
       }
       // Transient states (unknown / turningOn) — keep waiting silently.
+    });
+
+    // The platform scan has a 5-minute timeout; if it expires while the agent
+    // is still on the weighing screen (e.g. scale switched on late), restart
+    // it so readings resume without leaving the screen.
+    await _isScanningSubscription?.cancel();
+    _isScanningSubscription = FlutterBluePlus.isScanning.listen((scanning) {
+      if (scanning || !_scanRequested || _startingScan) return;
+      // Adapter-off is handled (and retried) by the adapter listener above.
+      if (FlutterBluePlus.adapterStateNow != BluetoothAdapterState.on) return;
+      if (kDebugMode) {
+        debugPrint('[BLE_SCAN] scan ended while still needed — restarting');
+      }
+      _beginScan();
     });
   }
 
@@ -158,6 +173,8 @@ class BluetoothScannerService {
     _scanRequested = false;
     _adapterSubscription?.cancel();
     _adapterSubscription = null;
+    _isScanningSubscription?.cancel();
+    _isScanningSubscription = null;
     _subscription?.cancel();
     // Swallow errors — stopScan can throw if the adapter is already off.
     FlutterBluePlus.stopScan().catchError((_) {});
