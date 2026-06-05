@@ -25,6 +25,12 @@ class OrderLoaded extends OrderState {
   // scale not found) so the pickup form can tell the agent why auto-reading is
   // blank instead of failing silently.
   final String? weightScaleError;
+  // Pay-On-Delivery QR (client issues #9/#21): fetched once per order so the
+  // delivery form can show a scannable payment code while Confirm Delivery
+  // stays locked until payment_status flips to 'paid'.
+  final PaymentQrResponseEntity? paymentQr;
+  final bool isPaymentQrLoading;
+  final String? paymentQrError;
 
   const OrderLoaded(
     this.order, {
@@ -36,6 +42,9 @@ class OrderLoaded extends OrderState {
     this.isLocationLoading = false,
     this.isSubmitting = false,
     this.weightScaleError,
+    this.paymentQr,
+    this.isPaymentQrLoading = false,
+    this.paymentQrError,
   });
 
   @override
@@ -49,6 +58,9 @@ class OrderLoaded extends OrderState {
     isWeightLocked,
     isSubmitting,
     weightScaleError,
+    paymentQr,
+    isPaymentQrLoading,
+    paymentQrError,
   ];
 
   OrderLoaded copyWith({
@@ -67,6 +79,12 @@ class OrderLoaded extends OrderState {
     // weightScaleError is null-coalesced, so passing null can't clear it; this
     // flag forces it back to null once a reading succeeds.
     bool clearWeightScaleError = false,
+    PaymentQrResponseEntity? paymentQr,
+    bool? isPaymentQrLoading,
+    String? paymentQrError,
+    // paymentQrError is null-coalesced like weightScaleError; this flag forces
+    // it back to null when a retry starts.
+    bool clearPaymentQrError = false,
   }) {
     return OrderLoaded(
       order ?? this.order,
@@ -80,6 +98,11 @@ class OrderLoaded extends OrderState {
       weightScaleError: clearWeightScaleError
           ? null
           : (weightScaleError ?? this.weightScaleError),
+      paymentQr: paymentQr ?? this.paymentQr,
+      isPaymentQrLoading: isPaymentQrLoading ?? this.isPaymentQrLoading,
+      paymentQrError: clearPaymentQrError
+          ? null
+          : (paymentQrError ?? this.paymentQrError),
     );
   }
 }

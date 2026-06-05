@@ -5,6 +5,7 @@ import '../entities/accept_order_response_entity.dart';
 import '../entities/cancel_order_response_entity.dart';
 import '../entities/mark_payment_received_response_entity.dart';
 import '../entities/notify_user_response_entity.dart';
+import '../entities/payment_qr_response_entity.dart';
 import '../entities/update_order_params.dart';
 import '../entities/update_order_response_entity.dart';
 
@@ -26,4 +27,6 @@ abstract class OrderRepository {
     String orderId,
     String reason,
   );
+
+  Future<Either<Failure, PaymentQrResponseEntity>> getPaymentQr(String orderId);
 }

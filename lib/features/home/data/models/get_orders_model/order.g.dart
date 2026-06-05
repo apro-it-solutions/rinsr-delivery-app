@@ -38,6 +38,7 @@ Order _$OrderFromJson(Map<String, dynamic> json) => Order(
   status: json['status'] as String?,
   orderType: json['order_type'] as String?,
   paymentStatus: json['payment_status'] as String?,
+  paymentMethod: json['payment_method'] as String?,
   vendorStatus: json['vendor_status'] as String?,
   pickupNotificationAt: json['pickup_notification_at'] == null
       ? null
@@ -111,6 +112,7 @@ Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
   'status': instance.status,
   'order_type': instance.orderType,
   'payment_status': instance.paymentStatus,
+  'payment_method': instance.paymentMethod,
   'vendor_status': instance.vendorStatus,
   'pickup_notification_at': instance.pickupNotificationAt?.toIso8601String(),
   'pickup_notification_sent': instance.pickupNotificationSent,

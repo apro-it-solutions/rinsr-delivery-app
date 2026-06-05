@@ -507,7 +507,6 @@ class _PhaseDViewState extends State<PhaseDView> {
 
                     // 2. Validate Barcode
                     if (result != null && context.mounted) {
-                      print('hello${widget.order.barcode}');
                       if (result == widget.order.barcode) {
                         context.read<OrderBloc>().add(StartDelivery());
                       } else {

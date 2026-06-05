@@ -12,7 +12,7 @@ class HomeRemoteDataSourceImpl extends HomeRemoteDataSource {
   HomeRemoteDataSourceImpl(this.dio);
   @override
   Future<GetOrdersModel> getOrders() async {
-    final Response response = await dio.get(ApiUrls.getOrders);
+    final Response response = await dio.get(ApiUrls.getDeliveryPartnerOrders);
     return GetOrdersModel.fromJson(response.data);
   }
 }

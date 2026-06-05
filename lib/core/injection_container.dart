@@ -24,6 +24,7 @@ import '../features/order/data/repositories/order_repositories_impl.dart';
 import '../features/order/domain/repositories/order_repository.dart';
 import '../features/order/domain/usecases/accept_order.dart';
 import '../features/order/domain/usecases/cancel_order.dart';
+import '../features/order/domain/usecases/get_payment_qr.dart';
 import '../features/order/domain/usecases/mark_payment_received.dart';
 import '../features/order/domain/usecases/notify_user.dart';
 import '../features/order/domain/usecases/update_order.dart';
@@ -84,6 +85,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AcceptOrder(sl()));
   sl.registerLazySingleton(() => MarkPaymentReceived(sl()));
   sl.registerLazySingleton(() => CancelOrder(sl()));
+  sl.registerLazySingleton(() => GetPaymentQr(sl()));
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
@@ -142,6 +144,7 @@ Future<void> init() async {
       notifyUser: sl(),
       markPaymentReceived: sl(),
       cancelOrder: sl(),
+      getPaymentQr: sl(),
       locationService: sl(),
       bluetoothScannerService: sl(),
     ),

@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/app_alerts.dart';
@@ -32,6 +34,40 @@ class OrderDeliveryForm extends StatefulWidget {
 class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
   final ImagePicker picker = ImagePicker();
   XFile? photo;
+  Timer? _paymentPollTimer;
+
+  bool get _isPaid => widget.order.paymentStatus == 'paid';
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_isPaid) {
+      if (widget.order.isPayOnDelivery) {
+        context.read<OrderBloc>().add(const LoadPaymentQr());
+      }
+      // Poll so the Confirm Delivery gate opens on its own once the customer
+      // pays — the agent shouldn't have to keep tapping "Check Payment Status".
+      _paymentPollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        if (!mounted || _isPaid) {
+          _paymentPollTimer?.cancel();
+          return;
+        }
+        if (!_isCheckingPayment) _checkPaymentStatus();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant OrderDeliveryForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_isPaid) _paymentPollTimer?.cancel();
+  }
+
+  @override
+  void dispose() {
+    _paymentPollTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +202,10 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
         ),
         const SizedBox(height: 32),
         if (widget.order.paymentStatus != 'paid') ...[
+          if (widget.order.isPayOnDelivery) ...[
+            _buildPaymentQrCard(context),
+            const SizedBox(height: 16),
+          ],
           Center(
             child: TextButton.icon(
               onPressed: _isCheckingPayment ? null : _checkPaymentStatus,
@@ -203,30 +243,143 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
             ),
           ),
           const SizedBox(height: 8),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Confirm Delivery unlocks once payment is received',
+                style: AppTextStyles.smallTextStyle(
+                  context,
+                ).copyWith(color: AppColors.greyTextColor),
+              ),
+            ),
+          ),
         ],
         ContinueButton(
           text: 'Confirm Delivery',
-          onPressed: () {
-            if (photo != null && widget.order.paymentStatus == 'paid') {
-              context.read<OrderBloc>().add(
-                SubmitProofOfDelivery(photoPath: photo!.path),
-              );
-            } else {
-              if (widget.order.paymentStatus != 'paid') {
-                _checkPaymentStatus(); // Auto-check on tap if unpaid
-              }
-              AppAlerts.showErrorSnackBar(
-                context: context,
-                message: _errorMessage(photo == null ? 'photo' : 'payment'),
-              );
-            }
-          },
+          // Gate hard on payment (client issue #21): the button stays disabled
+          // until payment_status flips to 'paid' (auto-polled above).
+          onPressed: _isPaid
+              ? () {
+                  if (photo != null) {
+                    context.read<OrderBloc>().add(
+                      SubmitProofOfDelivery(photoPath: photo!.path),
+                    );
+                  } else {
+                    AppAlerts.showErrorSnackBar(
+                      context: context,
+                      message: _errorMessage('photo'),
+                    );
+                  }
+                }
+              : null,
         ),
       ],
     );
   }
 
   bool _isCheckingPayment = false;
+
+  /// Pay-On-Delivery QR (client issue #9): the customer scans this to pay;
+  /// the poll in [initState] flips the Confirm Delivery gate once paid.
+  Widget _buildPaymentQrCard(BuildContext context) {
+    final amount =
+        widget.order.estimateTotalPrice ?? widget.order.totalPrice ?? 0;
+    return BlocBuilder<OrderBloc, OrderState>(
+      buildWhen: (previous, current) =>
+          previous is! OrderLoaded ||
+          current is! OrderLoaded ||
+          previous.paymentQr != current.paymentQr ||
+          previous.isPaymentQrLoading != current.isPaymentQrLoading ||
+          previous.paymentQrError != current.paymentQrError,
+      builder: (context, state) {
+        final loaded = state is OrderLoaded ? state : null;
+        final qr = loaded?.paymentQr;
+        final displayAmount = qr?.amount ?? amount;
+
+        Widget body;
+        if (loaded?.isPaymentQrLoading ?? false) {
+          body = const SizedBox(
+            height: 180,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        } else if (qr != null && qr.qrString != null) {
+          body = Center(
+            child: QrImageView(
+              data: qr.qrString!,
+              size: 200,
+              backgroundColor: Colors.white,
+            ),
+          );
+        } else if (qr != null && qr.qrImageUrl != null) {
+          body = Center(
+            child: Image.network(
+              qr.qrImageUrl!,
+              height: 200,
+              width: 200,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  _qrErrorBody(context),
+            ),
+          );
+        } else {
+          body = _qrErrorBody(
+            context,
+            message: loaded?.paymentQrError,
+          );
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            children: [
+              Text(
+                'Collect Payment • ₹$displayAmount',
+                style: AppTextStyles.mediumTextStyle(
+                  context,
+                ).copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Ask the customer to scan & pay. Status updates automatically.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.smallTextStyle(context),
+              ),
+              const SizedBox(height: 12),
+              body,
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _qrErrorBody(BuildContext context, {String? message}) {
+    return Column(
+      children: [
+        const Icon(Icons.qr_code_2, size: 48, color: AppColors.greyTextColor),
+        const SizedBox(height: 8),
+        Text(
+          message ?? 'Payment QR unavailable. Retry, or collect cash.',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.smallTextStyle(context),
+        ),
+        TextButton.icon(
+          onPressed: () => context.read<OrderBloc>().add(
+            const LoadPaymentQr(forceRefresh: true),
+          ),
+          icon: const Icon(Icons.refresh, size: 16),
+          label: const Text('Retry'),
+        ),
+      ],
+    );
+  }
 
   Future<void> _confirmMarkCashReceived(BuildContext context) async {
     final amount =

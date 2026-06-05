@@ -6,6 +6,7 @@ import '../../domain/entities/accept_order_response_entity.dart';
 import '../../domain/entities/cancel_order_response_entity.dart';
 import '../../domain/entities/mark_payment_received_response_entity.dart';
 import '../../domain/entities/notify_user_response_entity.dart';
+import '../../domain/entities/payment_qr_response_entity.dart';
 
 import '../../domain/entities/update_order_params.dart';
 
@@ -89,6 +90,18 @@ class OrderRepositoriesImpl implements OrderRepository {
     }
     return await apiHandler.execute(() async {
       return await remoteDataSource.cancelOrder(orderId, reason);
+    });
+  }
+
+  @override
+  Future<Either<Failure, PaymentQrResponseEntity>> getPaymentQr(
+    String orderId,
+  ) async {
+    if (!await networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+    return await apiHandler.execute(() async {
+      return await remoteDataSource.getPaymentQr(orderId);
     });
   }
 }

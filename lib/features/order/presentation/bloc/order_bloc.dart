@@ -8,7 +8,9 @@ import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.d
 import '../../../../core/services/location_service.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../domain/entities/update_order_params.dart';
+import '../../domain/entities/payment_qr_response_entity.dart';
 import '../../domain/usecases/cancel_order.dart';
+import '../../domain/usecases/get_payment_qr.dart';
 import '../../domain/usecases/mark_payment_received.dart';
 import '../../domain/usecases/notify_user.dart';
 import '../../domain/usecases/update_order.dart';
@@ -20,10 +22,11 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   final NotifyUser notifyUser;
   final MarkPaymentReceived markPaymentReceived;
   final CancelOrder cancelOrder;
+  final GetPaymentQr getPaymentQr;
   final LocationService locationService;
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<List<int>>? _weightSubscription;
-  StreamSubscription<BleScanFailure>? _weightFailureSubscription;
+  StreamSubscription<BleScanFailure?>? _weightFailureSubscription;
   final BluetoothScannerService bluetoothScannerService;
 
   OrderBloc({
@@ -31,6 +34,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     required this.notifyUser,
     required this.markPaymentReceived,
     required this.cancelOrder,
+    required this.getPaymentQr,
     required this.locationService,
     required this.bluetoothScannerService,
   }) : super(OrderInitial()) {
@@ -47,6 +51,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<StartDelivery>(_onStartDelivery);
     on<SubmitProofOfDelivery>(_onSubmitProofOfDelivery);
     on<MarkCashPaymentReceived>(_onMarkCashPaymentReceived);
+    on<LoadPaymentQr>(_onLoadPaymentQr);
     on<CancelOrderEvent>(_onCancelOrder);
     on<NotifyUserEvent>(_onNotifyUserEvent);
     on<StartWeightReading>(_onStartWeightReading);
@@ -55,6 +60,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<UnlockWeightReading>(_onUnlockWeightReading);
     on<WeightReadingUpdated>(_onWeightReadingUpdated);
     on<WeightScaleErrorEvent>(_onWeightScaleError);
+    on<WeightScaleErrorCleared>(_onWeightScaleErrorCleared);
   }
 
   void _listenWeightFailures() {
@@ -62,6 +68,12 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       failure,
     ) {
       if (isClosed) return;
+      if (failure == null) {
+        // Scan recovered (e.g. the agent turned Bluetooth back on while
+        // already on this screen) — clear the banner.
+        add(const WeightScaleErrorCleared());
+        return;
+      }
       final message = switch (failure) {
         BleScanFailure.permissionDenied =>
           'Bluetooth permission denied. Enable "Nearby devices" in Settings, '
@@ -83,6 +95,15 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   ) {
     if (state is OrderLoaded) {
       emit((state as OrderLoaded).copyWith(weightScaleError: event.message));
+    }
+  }
+
+  void _onWeightScaleErrorCleared(
+    WeightScaleErrorCleared event,
+    Emitter<OrderState> emit,
+  ) {
+    if (state is OrderLoaded) {
+      emit((state as OrderLoaded).copyWith(clearWeightScaleError: true));
     }
   }
 
@@ -363,6 +384,41 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         );
       }
     }
+  }
+
+  Future<void> _onLoadPaymentQr(
+    LoadPaymentQr event,
+    Emitter<OrderState> emit,
+  ) async {
+    if (state is! OrderLoaded) return;
+    final currentLoaded = state as OrderLoaded;
+    final orderId = currentLoaded.order.orderId;
+    if (orderId == null) return;
+    // The QR for an order is stable; don't refetch on every rebuild/poll.
+    if (currentLoaded.paymentQr != null && !event.forceRefresh) return;
+    if (currentLoaded.isPaymentQrLoading) return;
+
+    emit(
+      currentLoaded.copyWith(
+        isPaymentQrLoading: true,
+        clearPaymentQrError: true,
+      ),
+    );
+    final result = await getPaymentQr(orderId);
+    if (state is! OrderLoaded) return;
+    final latest = state as OrderLoaded;
+    result.fold(
+      (failure) => emit(
+        latest.copyWith(
+          isPaymentQrLoading: false,
+          paymentQrError:
+              'Could not load the payment QR. Retry, or collect cash.',
+        ),
+      ),
+      (qr) => emit(
+        latest.copyWith(isPaymentQrLoading: false, paymentQr: qr),
+      ),
+    );
   }
 
   Future<void> _onCancelOrder(

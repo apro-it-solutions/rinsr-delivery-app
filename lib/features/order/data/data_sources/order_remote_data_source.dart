@@ -5,6 +5,7 @@ import '../models/accept_order_response_model/accept_order_response_model.dart';
 import '../models/notify_users_response_model/notify_users_response_model.dart';
 import '../models/mark_payment_received_response_model.dart';
 import '../models/cancel_order_response_model.dart';
+import '../models/payment_qr_response_model.dart';
 import '../../../../core/constants/api_urls.dart';
 import '../../../../core/services/shared_preferences_service.dart';
 import '../models/update_order_model/update_order_model.dart';
@@ -21,6 +22,7 @@ abstract class OrderRemoteDataSource {
   Future<AcceptOrderResponseModel> acceptOrder(String orderId, String type);
   Future<MarkPaymentReceivedResponseModel> markPaymentReceived(String orderId);
   Future<CancelOrderResponseModel> cancelOrder(String orderId, String reason);
+  Future<PaymentQrResponseModel> getPaymentQr(String orderId);
 }
 
 class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
@@ -102,6 +104,12 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       ApiUrls.recordCashPayment(orderId),
     );
     return MarkPaymentReceivedResponseModel.fromJson(response.data);
+  }
+
+  @override
+  Future<PaymentQrResponseModel> getPaymentQr(String orderId) async {
+    final Response response = await dio.get(ApiUrls.paymentQr(orderId));
+    return PaymentQrResponseModel.fromJson(response.data);
   }
 
   @override

@@ -19,8 +19,10 @@ void main() async {
   await di.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await FCMService.initializeFCM();
+  // Prefs must come first: initializeFCM reads the saved agent id to re-sync
+  // the device token on every launch (stale-token fix).
   await SharedPreferencesService.init();
+  await FCMService.initializeFCM();
 
   // Initialize Location Permissions
   try {
@@ -59,6 +61,7 @@ class MyApp extends StatelessWidget {
             updateOrder: di.sl(),
             notifyUser: di.sl(),
             markPaymentReceived: di.sl(),
+            getPaymentQr: di.sl(),
             locationService: di.sl(), // Inject LocationService
           ),
         ),

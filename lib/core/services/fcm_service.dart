@@ -88,9 +88,28 @@ class FCMService {
 
       await _requestPermission();
 
-      if (vendorId != null) {
-        await _saveTokenToBackend(vendorId);
+      // Re-sync the device token on EVERY launch, not just at login.
+      // Previously the token was uploaded once at login; if FCM rotated it
+      // afterwards (app update, reinstall, Play-services refresh) the backend
+      // kept pushing to a dead token — "my device gets the notification, the
+      // client's doesn't". Fire-and-forget so the retry loop inside
+      // _saveTokenToBackend can't delay app startup.
+      final savedAgentId = SharedPreferencesService.getString(
+        AppConstants.kAgentId,
+      );
+      final registrationId = vendorId ?? savedAgentId;
+      if (registrationId != null) {
+        unawaited(_saveTokenToBackend(registrationId));
       }
+
+      // Token rotation can also happen mid-session; push the new one
+      // immediately or every notification until the next launch is lost.
+      _messaging.onTokenRefresh.listen((_) {
+        final agentId = SharedPreferencesService.getString(
+          AppConstants.kAgentId,
+        );
+        if (agentId != null) _saveTokenToBackend(agentId);
+      });
 
       _listenForeground(channel);
       _listenTerminated();
@@ -166,11 +185,15 @@ class FCMService {
           ),
         );
       }
-      // 2. Refresh Logic: If the type matches an order event, trigger refresh
+      // 2. Always refresh the list on any push — a dispatch/status push with
+      // an unrecognised `type` (e.g. vendor swipes dispatch) must still update
+      // the agent's list immediately, not only after a manual refresh.
+      _refreshOrdersList();
+
+      // 3. Only the new-order types drive the accept bottom-sheet popup.
       if (type == 'NEW_ORDER_BROADCAST' ||
           type == 'NEW_ORDER_PARTNER' ||
           type == 'ORDER_CREATED') {
-        _refreshOrdersList();
         _orderStreamController.add(data);
       }
     });

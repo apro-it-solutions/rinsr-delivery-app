@@ -35,6 +35,7 @@ class OrderDetailsEntity extends Equatable {
   final String? status;
   final String? orderType;
   final String? paymentStatus;
+  final String? paymentMethod;
   final String? vendorStatus;
   final DateTime? pickupNotificationAt;
   final bool? pickupNotificationSent;
@@ -77,6 +78,7 @@ class OrderDetailsEntity extends Equatable {
     this.status,
     this.orderType,
     this.paymentStatus,
+    this.paymentMethod,
     this.vendorStatus,
     this.pickupNotificationAt,
     this.pickupNotificationSent,
@@ -104,6 +106,12 @@ class OrderDetailsEntity extends Equatable {
   // pricingType, since piece-count confirmation is not meaningful for these.
   bool get isSubscriptionOrder =>
       subscriptionSnapshot != null || subscriptionId != null;
+
+  // Pay On Delivery: the agent collects payment at the doorstep (QR / cash)
+  // before Confirm Delivery unlocks (client issues #9 / #21).
+  bool get isPayOnDelivery => paymentMethod == 'pay_on_delivery';
+
+  bool get isPaid => paymentStatus == 'paid';
 
   bool get isPerPiece => !isSubscriptionOrder && pricingType == 'per_piece';
   bool get isPerWeight =>
@@ -192,6 +200,7 @@ class OrderDetailsEntity extends Equatable {
     status,
     orderType,
     paymentStatus,
+    paymentMethod,
     vendorStatus,
     pickupNotificationAt,
     pickupNotificationSent,
@@ -296,6 +305,7 @@ class OrderDetailsEntity extends Equatable {
     String? status,
     String? orderType,
     String? paymentStatus,
+    String? paymentMethod,
     String? vendorStatus,
     DateTime? pickupNotificationAt,
     bool? pickupNotificationSent,
@@ -338,6 +348,7 @@ class OrderDetailsEntity extends Equatable {
       status: status ?? this.status,
       orderType: orderType ?? this.orderType,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
       vendorStatus: vendorStatus ?? this.vendorStatus,
       pickupNotificationAt: pickupNotificationAt ?? this.pickupNotificationAt,
       pickupNotificationSent:

@@ -60,6 +60,17 @@ class SubmitProofOfDelivery extends OrderEvent {
 
 class MarkCashPaymentReceived extends OrderEvent {}
 
+/// Fetch the Pay-On-Delivery payment QR for the loaded order (issue #9).
+/// No-ops if a QR is already loaded unless [forceRefresh] is set.
+class LoadPaymentQr extends OrderEvent {
+  final bool forceRefresh;
+
+  const LoadPaymentQr({this.forceRefresh = false});
+
+  @override
+  List<Object> get props => [forceRefresh];
+}
+
 /// Cancel the order from the delivery side (issue 10) — surfaced only after the
 /// agent has called the customer repeatedly without an answer.
 class CancelOrderEvent extends OrderEvent {
@@ -117,6 +128,12 @@ final class WeightScaleErrorEvent extends OrderEvent {
 
   @override
   List<Object> get props => [message];
+}
+
+/// The scale scan recovered (e.g. Bluetooth was turned back on) — clear any
+/// weight-scale error banner.
+final class WeightScaleErrorCleared extends OrderEvent {
+  const WeightScaleErrorCleared();
 }
 
 final class WeightReadingUpdated extends OrderEvent {
