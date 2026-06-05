@@ -45,7 +45,12 @@ class _OrderListItemState extends State<OrderListItem> {
 
     final target = _getTargetAddress(widget.order);
     if (target.isNotEmpty) {
-      _orderBloc.add(InitLocationEvent(targetAddress: target));
+      _orderBloc.add(
+        InitLocationEvent(
+          targetAddress: target,
+          targetCoordinates: widget.order.navTargetCoordinates,
+        ),
+      );
     }
   }
 
@@ -467,7 +472,9 @@ class _OrderListItemState extends State<OrderListItem> {
 
   String _formatDate(DateTime? date) {
     if (date == null) return '';
-    return DateFormat('MMM d, y • h:mm a').format(date);
+    // Backend timestamps are UTC (ISO `...Z`); convert to device-local time
+    // or the card shows times 5h30m behind IST.
+    return DateFormat('MMM d, y • h:mm a').format(date.toLocal());
   }
 
   String _displayDateLabel(OrderDetailsEntity order) {

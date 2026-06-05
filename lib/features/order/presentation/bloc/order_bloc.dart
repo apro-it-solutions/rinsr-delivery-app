@@ -486,6 +486,17 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     }
   }
 
+  /// Parses a backend "lat,lng" string; null when absent or malformed.
+  (double, double)? _parseLatLng(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final parts = raw.split(',');
+    if (parts.length != 2) return null;
+    final lat = double.tryParse(parts[0].trim());
+    final lng = double.tryParse(parts[1].trim());
+    if (lat == null || lng == null) return null;
+    return (lat, lng);
+  }
+
   Future<void> _onInitLocationEvent(
     InitLocationEvent event,
     Emitter<OrderState> emit,
@@ -497,12 +508,24 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
 
     try {
       // 1. Check permissions (Assuming checked in main, but good to double check or handle stream)
-      // 2. Get Target Address
-      final targetLocation = await locationService.getCoordinatesFromAddress(
-        event.targetAddress,
-      );
+      // 2. Resolve the target. Prefer the backend's exact "lat,lng" — geocoding
+      // the free-text address can land kilometres away (client report: a 130 m
+      // pickup displayed as 24 mins because the address geocoded ~8 km off).
+      double? targetLat;
+      double? targetLng;
+      final exact = _parseLatLng(event.targetCoordinates);
+      if (exact != null) {
+        targetLat = exact.$1;
+        targetLng = exact.$2;
+      } else {
+        final geocoded = await locationService.getCoordinatesFromAddress(
+          event.targetAddress,
+        );
+        targetLat = geocoded?.latitude;
+        targetLng = geocoded?.longitude;
+      }
 
-      if (targetLocation == null) {
+      if (targetLat == null || targetLng == null) {
         emit(
           currentState.copyWith(
             isLocationLoading: false,
@@ -512,6 +535,9 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         );
         return;
       }
+      // Promote to non-nullable locals for use inside the stream closure.
+      final lat = targetLat;
+      final lng = targetLng;
 
       // 3. Start Listening
       await _positionSubscription?.cancel();
@@ -526,8 +552,8 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
               distance: locationService.getDistanceBetween(
                 position.latitude,
                 position.longitude,
-                targetLocation.latitude,
-                targetLocation.longitude,
+                lat,
+                lng,
               ),
             ),
           );
@@ -547,8 +573,8 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
             distance: locationService.getDistanceBetween(
               position.latitude,
               position.longitude,
-              targetLocation.latitude,
-              targetLocation.longitude,
+              lat,
+              lng,
             ),
           ),
         );

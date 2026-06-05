@@ -1,11 +1,14 @@
 import 'package:intl/intl.dart';
 
+// Backend timestamps are UTC (ISO `...Z`); always convert to device-local
+// time before formatting or every displayed time is 5h30m behind IST.
+// `.toLocal()` is a no-op for DateTimes that are already local.
 String formatDateMMMDDYYYY(DateTime date) {
-  return DateFormat('MMM dd, yyyy').format(date);
+  return DateFormat('MMM dd, yyyy').format(date.toLocal());
 }
 
 String formatDateMMMDDYYYYHHMM(DateTime date) {
-  return DateFormat('MMM dd, yyyy hh:mm a').format(date);
+  return DateFormat('MMM dd, yyyy hh:mm a').format(date.toLocal());
 }
 
 String formatTimeDifference(DateTime targetTime) {

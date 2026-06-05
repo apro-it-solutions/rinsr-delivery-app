@@ -10,10 +10,12 @@ PickupAddress _$PickupAddressFromJson(Map<String, dynamic> json) =>
     PickupAddress(
       label: json['label'] as String?,
       addressLine: json['address_line'] as String?,
+      coordinates: json['coordinates'] as String?,
     );
 
 Map<String, dynamic> _$PickupAddressToJson(PickupAddress instance) =>
     <String, dynamic>{
       'label': instance.label,
       'address_line': instance.addressLine,
+      'coordinates': instance.coordinates,
     };

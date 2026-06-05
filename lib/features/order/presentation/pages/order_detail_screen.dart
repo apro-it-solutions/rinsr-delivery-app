@@ -37,7 +37,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final targetAddress = _getTargetAddress(widget.order);
     if (targetAddress.isNotEmpty) {
       context.read<OrderBloc>().add(
-        InitLocationEvent(targetAddress: targetAddress),
+        InitLocationEvent(
+          targetAddress: targetAddress,
+          targetCoordinates: widget.order.navTargetCoordinates,
+        ),
       );
     }
   }
@@ -122,7 +125,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 final newTarget = _getTargetAddress(state.order);
                 if (newTarget.isNotEmpty) {
                   context.read<OrderBloc>().add(
-                    InitLocationEvent(targetAddress: newTarget),
+                    InitLocationEvent(
+                      targetAddress: newTarget,
+                      targetCoordinates: state.order.navTargetCoordinates,
+                    ),
                   );
                 }
                 if (!mounted) return;

@@ -8,6 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/app_alerts.dart';
+import '../../../../core/utils/launcher_utils.dart';
 import '../../../../core/widgets/continue_button.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../../home/presentation/bloc/home_bloc.dart'; // Added
@@ -74,6 +75,27 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Customer contact — same as the stage-2 pickup form, so the agent can
+        // still call the customer after sliding past "Arrived at Location".
+        if (widget.order.userName.isNotEmpty) ...[
+          OrderInfoCard(
+            title: 'Customer Name',
+            content: widget.order.userName,
+            icon: Icons.person,
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (widget.order.userPhone.isNotEmpty) ...[
+          OrderInfoCard(
+            title: 'Customer Phone',
+            content: widget.order.userPhone,
+            icon: Icons.phone,
+            onActionTap: () =>
+                LauncherUtils.launchPhone(context, widget.order.userPhone),
+            actionIcon: Icons.call,
+          ),
+          const SizedBox(height: 12),
+        ],
         OrderInfoCard(
           title: 'Deliver To',
           content: widget.order.userAddress,

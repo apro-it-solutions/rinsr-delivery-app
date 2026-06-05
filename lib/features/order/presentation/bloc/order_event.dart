@@ -94,10 +94,15 @@ class NotifyUserEvent extends OrderEvent {
 class InitLocationEvent extends OrderEvent {
   final String targetAddress;
 
-  const InitLocationEvent({required this.targetAddress});
+  /// Exact "lat,lng" of the target when the backend provides it. Preferred
+  /// over geocoding [targetAddress], which can resolve kilometres away for
+  /// free-text addresses (client report: 130 m pickup shown as 24 mins).
+  final String? targetCoordinates;
+
+  const InitLocationEvent({required this.targetAddress, this.targetCoordinates});
 
   @override
-  List<Object> get props => [targetAddress];
+  List<Object> get props => [targetAddress, targetCoordinates ?? ''];
 }
 
 class LocationUpdatedEvent extends OrderEvent {

@@ -279,6 +279,26 @@ class OrderDetailsEntity extends Equatable {
   String get userAddress => pickupAddress?.addressLine ?? '';
   String get hubAddress => vendorId?.location ?? '';
   String get vendorAddress => vendorId?.location ?? '';
+
+  /// Exact "lat,lng" of the current navigation target, mirroring the
+  /// `_getTargetAddress` switches in the UI (user for pickup/delivery legs,
+  /// hub/vendor otherwise). Null when the backend didn't send coordinates —
+  /// callers then fall back to geocoding the address text.
+  String? get navTargetCoordinates {
+    switch (computedStatus) {
+      case OrderStatus.scheduled:
+      case OrderStatus.outForDelivery:
+        return pickupAddress?.coordinates; // user address
+      case OrderStatus.pickedUp:
+      case OrderStatus.ready:
+      case OrderStatus.readyToPickupFromHub:
+      case OrderStatus.vendorReturning:
+      case OrderStatus.serviceCompleted:
+        return vendorId?.locationCoordinates; // hub/vendor address
+      default:
+        return null;
+    }
+  }
   String get userName => userId?.name ?? '';
   String get userPhone => userId?.phone ?? '';
   String get vendorName => vendorId?.companyName ?? '';
@@ -502,10 +522,15 @@ class PickupAddressEntity extends Equatable {
   final String? label;
   final String? addressLine;
 
-  const PickupAddressEntity({this.label, this.addressLine});
+  /// Exact GPS position of the address as "lat,lng" (captured by the user
+  /// app). Prefer this over geocoding [addressLine], which can resolve
+  /// kilometres away for free-text Indian addresses.
+  final String? coordinates;
+
+  const PickupAddressEntity({this.label, this.addressLine, this.coordinates});
 
   @override
-  List<Object?> get props => [label, addressLine];
+  List<Object?> get props => [label, addressLine, coordinates];
 }
 
 class UserIdEntity extends Equatable {

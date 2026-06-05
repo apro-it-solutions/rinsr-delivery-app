@@ -11,9 +11,11 @@ class PickupAddress extends PickupAddressEntity {
   @override
   @JsonKey(name: 'address_line')
   final String? addressLine;
+  @override
+  final String? coordinates;
 
-  const PickupAddress({this.label, this.addressLine})
-    : super(label: label, addressLine: addressLine);
+  const PickupAddress({this.label, this.addressLine, this.coordinates})
+    : super(label: label, addressLine: addressLine, coordinates: coordinates);
 
   factory PickupAddress.fromJson(Map<String, dynamic> json) {
     return _$PickupAddressFromJson(json);
@@ -21,10 +23,15 @@ class PickupAddress extends PickupAddressEntity {
 
   Map<String, dynamic> toJson() => _$PickupAddressToJson(this);
 
-  PickupAddress copyWith({String? label, String? addressLine}) {
+  PickupAddress copyWith({
+    String? label,
+    String? addressLine,
+    String? coordinates,
+  }) {
     return PickupAddress(
       label: label ?? this.label,
       addressLine: addressLine ?? this.addressLine,
+      coordinates: coordinates ?? this.coordinates,
     );
   }
 }

@@ -39,7 +39,12 @@ class _SingleOrderViewState extends State<SingleOrderView> {
     // Trigger location calculation if needed, similar to OrderListItem
     final target = _getTargetAddress(widget.order);
     if (target.isNotEmpty) {
-      _orderBloc.add(InitLocationEvent(targetAddress: target));
+      _orderBloc.add(
+        InitLocationEvent(
+          targetAddress: target,
+          targetCoordinates: widget.order.navTargetCoordinates,
+        ),
+      );
     }
   }
 
