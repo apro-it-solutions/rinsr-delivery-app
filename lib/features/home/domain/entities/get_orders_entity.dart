@@ -137,6 +137,30 @@ class OrderDetailsEntity extends Equatable {
         s == OrderStatus.outForDelivery;
   }
 
+  // The vendor app moves an order washing → completed → dispatched. The agent
+  // must only be allowed to collect the cleaned order from the vendor once it
+  // has been DISPATCHED — `completed` just means washing is finished, not that
+  // it's ready for pickup. (Bug: vendor marking `completed` wrongly surfaced
+  // the "Pickup from Vendor" screen.)
+  //
+  // We block only when the vendor explicitly reports a pre-dispatch state, so
+  // orders where the backend doesn't populate `vendor_status` are unaffected.
+  static const _preDispatchVendorStatuses = {
+    'awaiting_vendor',
+    'new_order',
+    'received',
+    'accepted',
+    'washing',
+    'completed',
+    'service_completed',
+  };
+
+  bool get isAwaitingVendorDispatch {
+    final vs = vendorStatus?.toLowerCase();
+    if (vs == null || vs.isEmpty) return false;
+    return _preDispatchVendorStatuses.contains(vs);
+  }
+
   bool hasAcceptedReturnLeg(String agentId) {
     return deliveryUpdates?.delivered?.any(
           (u) =>

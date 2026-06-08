@@ -49,6 +49,20 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             // `currentDeliveryPartnerId`, so a naive `pickedUpDeliveryPartnerId == null`
             // check hides every return-pickup order from every other agent.
             final status = order.computedStatus;
+
+            // The vendor finished the service but hasn't dispatched yet — the
+            // order is still sitting at the vendor and isn't collectable. Keep
+            // it out of the list entirely until the vendor dispatches it.
+            // (Bug: vendor marking the order `completed` surfaced it as a
+            // "Pickup from Vendor" task before it was ready.)
+            final isVendorPickupStage =
+                status == OrderStatus.serviceCompleted ||
+                status == OrderStatus.ready ||
+                status == OrderStatus.readyToPickupFromHub;
+            if (isVendorPickupStage && order.isAwaitingVendorDispatch) {
+              return false;
+            }
+
             // `ready` (post-washing) is the start of the return leg in the
             // production backend; the readyToPickupFromHub/outForDelivery
             // names cover the alternate mapping path.

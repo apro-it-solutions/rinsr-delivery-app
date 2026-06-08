@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/enums.dart';
+import '../../../../core/services/shared_preferences_service.dart';
 import '../../../../core/utils/app_alerts.dart';
 import '../../../../core/utils/launcher_utils.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
@@ -37,6 +38,21 @@ class _PhaseAViewState extends State<PhaseAView> {
   // 1: Pickup Details (Photo, Weight, Scan)
   int _currentStep = 0;
 
+  // Once the agent swipes "Arrived at Location" they shouldn't be able to fall
+  // back to the navigation step. The backend status stays `scheduled` until
+  // pickup is submitted, so we persist the arrived flag locally to survive a
+  // refresh, app restart, or re-entering the order.
+  String get _arrivedKey => 'arrived_pickup_${widget.order.orderId ?? ''}';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.order.orderId != null &&
+        (SharedPreferencesService.getBool(_arrivedKey) ?? false)) {
+      _currentStep = 1;
+    }
+  }
+
   // Issue 10: once the agent has called the customer this many times without an
   // answer, reveal a "Cancel Order" option for unreachable customers.
   static const int _cancelCallThreshold = 5;
@@ -70,6 +86,10 @@ class _PhaseAViewState extends State<PhaseAView> {
       ),
     );
     if (confirmed == true && mounted) {
+      if (widget.order.orderId != null) {
+        await SharedPreferencesService.remove(_arrivedKey);
+      }
+      if (!mounted) return;
       context.read<OrderBloc>().add(
         const CancelOrderEvent(
           reason: 'Customer not answering calls during pickup',
@@ -129,6 +149,13 @@ class _PhaseAViewState extends State<PhaseAView> {
                         context.read<OrderBloc>().add(
                           NotifyUserEvent(orderId: widget.order.orderId ?? ''),
                         );
+                        if (widget.order.orderId != null) {
+                          await SharedPreferencesService.setBool(
+                            _arrivedKey,
+                            true,
+                          );
+                        }
+                        if (!mounted) return;
                         setState(() {
                           _currentStep = 1;
                         });
@@ -471,6 +498,20 @@ class PhaseDView extends StatefulWidget {
 class _PhaseDViewState extends State<PhaseDView> {
   int _currentStep = 0;
 
+  // Mirror of PhaseA: lock the agent onto the delivery form once "Arrived at
+  // Location" is swiped, even across restarts (status stays `out_for_delivery`
+  // until proof of delivery is submitted).
+  String get _arrivedKey => 'arrived_delivery_${widget.order.orderId ?? ''}';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.order.orderId != null &&
+        (SharedPreferencesService.getBool(_arrivedKey) ?? false)) {
+      _currentStep = 1;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final distanceText = widget.distance != null
@@ -488,6 +529,19 @@ class _PhaseDViewState extends State<PhaseDView> {
               title: 'Vendor Name',
               content: widget.order.vendorId!.companyName!,
               icon: Icons.store,
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (widget.order.vendorId?.phoneNumber != null) ...[
+            OrderInfoCard(
+              title: 'Vendor Phone',
+              content: widget.order.vendorId!.phoneNumber!,
+              icon: Icons.phone,
+              onActionTap: () => LauncherUtils.launchPhone(
+                context,
+                widget.order.vendorId!.phoneNumber!,
+              ),
+              actionIcon: Icons.call,
             ),
             const SizedBox(height: 12),
           ],
@@ -574,6 +628,13 @@ class _PhaseDViewState extends State<PhaseDView> {
                       context.read<OrderBloc>().add(
                         NotifyUserEvent(orderId: widget.order.orderId ?? ''),
                       );
+                      if (widget.order.orderId != null) {
+                        await SharedPreferencesService.setBool(
+                          _arrivedKey,
+                          true,
+                        );
+                      }
+                      if (!mounted) return;
                       setState(() => _currentStep = 1);
                     }
                   : () {
