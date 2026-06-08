@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/app_alerts.dart';
@@ -15,6 +14,7 @@ import '../../../home/presentation/bloc/home_bloc.dart'; // Added
 import '../../../../core/constants/constants.dart'; // Added
 import '../../../../core/services/shared_preferences_service.dart'; // Added
 import '../bloc/order_bloc.dart';
+import '../pages/payment_qr_screen.dart';
 import 'order_info_card.dart';
 import 'order_itemized_list.dart';
 
@@ -225,7 +225,7 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
         const SizedBox(height: 32),
         if (widget.order.paymentStatus != 'paid') ...[
           if (widget.order.isPayOnDelivery) ...[
-            _buildPaymentQrCard(context),
+            _buildShowQrButton(context),
             const SizedBox(height: 16),
           ],
           Center(
@@ -302,104 +302,45 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
 
   bool _isCheckingPayment = false;
 
-  /// Pay-On-Delivery QR (client issue #9): the customer scans this to pay;
-  /// the poll in [initState] flips the Confirm Delivery gate once paid.
-  Widget _buildPaymentQrCard(BuildContext context) {
+  /// Pay-On-Delivery QR (client issue #9): opens the QR on its own full-screen
+  /// page so the customer gets a large, easy-to-scan code. The poll in
+  /// [initState] flips the Confirm Delivery gate once paid.
+  Widget _buildShowQrButton(BuildContext context) {
     final amount =
         widget.order.estimateTotalPrice ?? widget.order.totalPrice ?? 0;
-    return BlocBuilder<OrderBloc, OrderState>(
-      buildWhen: (previous, current) =>
-          previous is! OrderLoaded ||
-          current is! OrderLoaded ||
-          previous.paymentQr != current.paymentQr ||
-          previous.isPaymentQrLoading != current.isPaymentQrLoading ||
-          previous.paymentQrError != current.paymentQrError,
-      builder: (context, state) {
-        final loaded = state is OrderLoaded ? state : null;
-        final qr = loaded?.paymentQr;
-        final displayAmount = qr?.amount ?? amount;
-
-        Widget body;
-        if (loaded?.isPaymentQrLoading ?? false) {
-          body = const SizedBox(
-            height: 180,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        } else if (qr != null && qr.qrString != null) {
-          body = Center(
-            child: QrImageView(
-              data: qr.qrString!,
-              size: 200,
-              backgroundColor: Colors.white,
-            ),
-          );
-        } else if (qr != null && qr.qrImageUrl != null) {
-          body = Center(
-            child: Image.network(
-              qr.qrImageUrl!,
-              height: 200,
-              width: 200,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  _qrErrorBody(context),
-            ),
-          );
-        } else {
-          body = _qrErrorBody(
-            context,
-            message: loaded?.paymentQrError,
-          );
-        }
-
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => _openPaymentQr(context, amount),
+        icon: const Icon(Icons.qr_code_2),
+        label: Text('Show Payment QR • ₹$amount'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            children: [
-              Text(
-                'Collect Payment • ₹$displayAmount',
-                style: AppTextStyles.mediumTextStyle(
-                  context,
-                ).copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Ask the customer to scan & pay. Status updates automatically.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.smallTextStyle(context),
-              ),
-              const SizedBox(height: 12),
-              body,
-            ],
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _qrErrorBody(BuildContext context, {String? message}) {
-    return Column(
-      children: [
-        const Icon(Icons.qr_code_2, size: 48, color: AppColors.greyTextColor),
-        const SizedBox(height: 8),
-        Text(
-          message ?? 'Payment QR unavailable. Retry, or collect cash.',
-          textAlign: TextAlign.center,
-          style: AppTextStyles.smallTextStyle(context),
+  void _openPaymentQr(BuildContext context, num amount) {
+    // Make sure a QR is loaded (initState preloads it, but refetch if it failed
+    // earlier so the full-screen page isn't blank).
+    final orderBloc = context.read<OrderBloc>();
+    final state = orderBloc.state;
+    final hasQr = state is OrderLoaded && state.paymentQr != null;
+    if (!hasQr) orderBloc.add(const LoadPaymentQr());
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: orderBloc,
+          child: PaymentQrScreen(amount: amount),
         ),
-        TextButton.icon(
-          onPressed: () => context.read<OrderBloc>().add(
-            const LoadPaymentQr(forceRefresh: true),
-          ),
-          icon: const Icon(Icons.refresh, size: 16),
-          label: const Text('Retry'),
-        ),
-      ],
+      ),
     );
   }
 
