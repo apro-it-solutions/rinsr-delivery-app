@@ -13,6 +13,10 @@ class ApiUrls {
   static String getRatings(String partnerId) =>
       'ratings/delivery-partner/$partnerId';
   static const String notifyUser = 'delivery-notifications/notify-user';
+  // Live driver location ping consumed by the customer tracking map. Body:
+  // { orderId, lat, lng, headingDeg, speedKph }. Backend re-broadcasts it to
+  // socket room order_tracking_<orderId> as a 'location_update' event.
+  static const String driverTrackingUpdate = 'tracking/driver/update';
   static String recordCashPayment(String orderId) =>
       'orders/$orderId/record-cash-payment';
   static String cancelOrder(String orderId) => 'orders/$orderId/cancel';

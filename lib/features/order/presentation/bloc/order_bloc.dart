@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart'; // For Position type
 import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
+import 'package:rinsr_delivery_partner/core/services/driver_tracking_service.dart';
 
 import '../../../../core/services/location_service.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
@@ -28,6 +29,11 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   StreamSubscription<List<int>>? _weightSubscription;
   StreamSubscription<BleScanFailure?>? _weightFailureSubscription;
   final BluetoothScannerService bluetoothScannerService;
+  final DriverTrackingService trackingService;
+  // Throttle live-tracking POSTs so a fast GPS stream doesn't hammer the
+  // backend — at most one ping every [_trackingInterval].
+  DateTime? _lastTrackingPostAt;
+  static const _trackingInterval = Duration(seconds: 5);
 
   OrderBloc({
     required this.updateOrder,
@@ -37,6 +43,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     required this.getPaymentQr,
     required this.locationService,
     required this.bluetoothScannerService,
+    required this.trackingService,
   }) : super(OrderInitial()) {
     on<OrderLoadEvent>(_onOrderLoadEvent);
     on<InitLocationEvent>(_onInitLocationEvent);
@@ -546,6 +553,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       _positionSubscription = locationService.getPositionStream().listen(
         (position) {
           if (isClosed) return; // Check closure before adding event
+          _postTracking(position);
           add(
             LocationUpdatedEvent(
               position: position,
@@ -567,6 +575,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       try {
         final position = await locationService.getCurrentPosition();
         if (isClosed) return; // Check closure before adding event
+        _postTracking(position);
         add(
           LocationUpdatedEvent(
             position: position,
@@ -604,6 +613,31 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
         ),
       );
     }
+  }
+
+  /// Pushes the driver's position to the backend so the customer's tracking map
+  /// can move the marker. Throttled to [_trackingInterval]; no-ops when there's
+  /// no loaded order to attach the ping to. Fire-and-forget (errors swallowed
+  /// inside the service) so it never blocks the location pipeline.
+  void _postTracking(Position position) {
+    final current = state;
+    final orderId = current is OrderLoaded ? current.order.orderId : null;
+    if (orderId == null || orderId.isEmpty) return;
+
+    final now = DateTime.now();
+    if (_lastTrackingPostAt != null &&
+        now.difference(_lastTrackingPostAt!) < _trackingInterval) {
+      return;
+    }
+    _lastTrackingPostAt = now;
+
+    trackingService.sendUpdate(
+      orderId: orderId,
+      lat: position.latitude,
+      lng: position.longitude,
+      headingDeg: position.heading >= 0 ? position.heading : null,
+      speedKph: position.speed >= 0 ? position.speed * 3.6 : null,
+    );
   }
 
   @override

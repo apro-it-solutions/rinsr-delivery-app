@@ -2,6 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
+import 'package:rinsr_delivery_partner/core/services/driver_tracking_service.dart';
 import '../features/auth/data/repositories/auth_repositories_impl.dart';
 import '../features/auth/domain/usecases/authenticate_with_backend.dart';
 import '../features/auth/domain/usecases/login_with_phone.dart';
@@ -138,6 +139,10 @@ Future<void> init() async {
     () => BluetoothScannerService(),
   );
 
+  sl.registerLazySingleton<DriverTrackingService>(
+    () => DriverTrackingService(sl()),
+  );
+
   sl.registerFactory(
     () => OrderBloc(
       updateOrder: sl(),
@@ -147,6 +152,7 @@ Future<void> init() async {
       getPaymentQr: sl(),
       locationService: sl(),
       bluetoothScannerService: sl(),
+      trackingService: sl(),
     ),
   );
 

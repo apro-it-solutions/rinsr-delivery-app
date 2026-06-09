@@ -63,6 +63,7 @@ class MyApp extends StatelessWidget {
             markPaymentReceived: di.sl(),
             getPaymentQr: di.sl(),
             locationService: di.sl(),
+            trackingService: di.sl(),
           ),
         ),
       ],
