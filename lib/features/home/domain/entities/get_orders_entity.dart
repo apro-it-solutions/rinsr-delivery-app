@@ -34,6 +34,7 @@ class OrderDetailsEntity extends Equatable {
   final int? totalPrice;
   final String? status;
   final String? orderType;
+  final String? bookingType;
   final String? paymentStatus;
   final String? paymentMethod;
   final String? vendorStatus;
@@ -77,6 +78,7 @@ class OrderDetailsEntity extends Equatable {
     this.totalPrice,
     this.status,
     this.orderType,
+    this.bookingType,
     this.paymentStatus,
     this.paymentMethod,
     this.vendorStatus,
@@ -110,6 +112,12 @@ class OrderDetailsEntity extends Equatable {
   // Pay On Delivery: the agent collects payment at the doorstep (QR / cash)
   // before Confirm Delivery unlocks (client issues #9 / #21).
   bool get isPayOnDelivery => paymentMethod == 'pay_on_delivery';
+
+  // "Book now" (immediate) vs "later" (scheduled) pickup. Book-now orders have
+  // no meaningful pickup slot, so the scheduled-pickup summary is hidden for
+  // them. Backend field: booking_type ('now' | 'later'). Treat unknown/missing
+  // as scheduled so we never hide a real slot.
+  bool get isBookNow => (bookingType ?? '').toLowerCase() == 'now';
 
   bool get isPaid => paymentStatus == 'paid';
 
@@ -223,6 +231,7 @@ class OrderDetailsEntity extends Equatable {
     totalPrice,
     status,
     orderType,
+    bookingType,
     paymentStatus,
     paymentMethod,
     vendorStatus,

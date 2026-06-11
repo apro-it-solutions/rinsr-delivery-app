@@ -160,6 +160,9 @@ class _SingleOrderViewState extends State<SingleOrderView> {
   }
 
   String? _pickupSummary() {
+    // Book-now orders are immediate pickups — there is no scheduled slot to
+    // show, so suppress the summary card entirely for them.
+    if (widget.order.isBookNow) return null;
     final date = widget.order.pickupDate;
     final slot = widget.order.pickupTimeSlot;
     final dateText = date != null ? formatDateMMMDDYYYY(date) : null;

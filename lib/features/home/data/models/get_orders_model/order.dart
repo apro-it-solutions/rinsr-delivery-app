@@ -73,6 +73,9 @@ class Order extends OrderDetailsEntity {
   @JsonKey(name: 'order_type')
   final String? orderType;
   @override
+  @JsonKey(name: 'booking_type')
+  final String? bookingType;
+  @override
   @JsonKey(name: 'payment_status')
   final String? paymentStatus;
   @override
@@ -163,6 +166,7 @@ class Order extends OrderDetailsEntity {
     this.totalPrice,
     this.status,
     this.orderType,
+    this.bookingType,
     this.paymentStatus,
     this.paymentMethod,
     this.vendorStatus,
@@ -206,6 +210,7 @@ class Order extends OrderDetailsEntity {
          totalNoOfClothes: totalNoOfClothes,
          heavyItems: heavyItems,
          orderType: orderType,
+         bookingType: bookingType,
          paymentStatus: paymentStatus,
          paymentMethod: paymentMethod,
          pickupNotificationAt: pickupNotificationAt,
@@ -254,6 +259,7 @@ class Order extends OrderDetailsEntity {
     int? totalPrice,
     String? status,
     String? orderType,
+    String? bookingType,
     String? paymentStatus,
     String? paymentMethod,
     String? vendorStatus,
@@ -306,6 +312,7 @@ class Order extends OrderDetailsEntity {
       totalPrice: totalPrice ?? this.totalPrice,
       status: status ?? this.status,
       orderType: orderType ?? this.orderType,
+      bookingType: bookingType ?? this.bookingType,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       vendorStatus: vendorStatus ?? this.vendorStatus,

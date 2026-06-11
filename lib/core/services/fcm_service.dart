@@ -146,11 +146,24 @@ class FCMService {
 
     if (token == null) return;
 
-    try {
-      await dio.post(ApiUrls.saveToken, data: {'device_token': token});
-      debugPrint('✅ Token saved to backend');
-    } catch (e) {
-      debugPrint('❌ Error saving token: $e');
+    // Retry the upload too — getToken() above is retried 5×, but a transient
+    // DNS/network blip at launch would otherwise kill the single-shot POST and
+    // leave the backend pushing to a stale token (the staleness bug #13 fix is
+    // meant to prevent). Silent: this is fire-and-forget startup work, so the
+    // global Dio interceptor must not surface a snackbar on failure.
+    for (int i = 0; i < 5; i++) {
+      try {
+        await dio.post(
+          ApiUrls.saveToken,
+          data: {'device_token': token},
+          options: Options(extra: const {DioConfig.kSilentErrors: true}),
+        );
+        debugPrint('✅ Token saved to backend');
+        return;
+      } catch (e) {
+        debugPrint('❌ Error saving token (attempt $i): $e');
+      }
+      await Future.delayed(Duration(seconds: 2 * (i + 1)));
     }
   }
 

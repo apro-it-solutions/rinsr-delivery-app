@@ -8,6 +8,12 @@ import '../services/shared_preferences_service.dart';
 import '../utils/app_alerts.dart';
 
 class DioConfig {
+  /// Set `Options(extra: {DioConfig.kSilentErrors: true})` on a request to
+  /// suppress the global error snackbar (e.g. fire-and-forget startup work
+  /// like FCM token upload, where a transient DNS/network blip must stay
+  /// invisible to the user).
+  static const String kSilentErrors = 'silentErrors';
+
   static Dio createDio() {
     final dio = Dio(
       BaseOptions(
@@ -29,6 +35,9 @@ class DioConfig {
           return handler.next(options);
         },
         onError: (DioException error, ErrorInterceptorHandler handler) async {
+          final silentErrors =
+              error.requestOptions.extra[kSilentErrors] == true;
+
           // 1. Handle Logout Scenarios (401/403)
           if (error.response?.statusCode == 401 ||
               error.response?.statusCode == 403) {
@@ -46,7 +55,8 @@ class DioConfig {
             );
           }
           // 2. Handle 500+ Server Errors
-          else if (error.response?.statusCode != null &&
+          else if (!silentErrors &&
+              error.response?.statusCode != null &&
               error.response!.statusCode! >= 500) {
             AppAlerts.showErrorSnackBar(
               context: AppRouter.navigatorKey.currentContext!,
@@ -54,9 +64,10 @@ class DioConfig {
             );
           }
           // 3. Handle Network/Connection Errors
-          else if (error.type == DioExceptionType.connectionTimeout ||
-              error.type == DioExceptionType.receiveTimeout ||
-              error.type == DioExceptionType.connectionError) {
+          else if (!silentErrors &&
+              (error.type == DioExceptionType.connectionTimeout ||
+                  error.type == DioExceptionType.receiveTimeout ||
+                  error.type == DioExceptionType.connectionError)) {
             AppAlerts.showErrorSnackBar(
               context: AppRouter.navigatorKey.currentContext!,
               message: 'Please check your internet connection.',
