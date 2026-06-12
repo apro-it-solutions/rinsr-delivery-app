@@ -22,7 +22,10 @@ class NewOrderRequestView extends StatelessWidget {
         data['pickup_address']?.toString() ?? 'Check details in list';
     final dropAddress = data['drop_address']?.toString() ?? '--';
 
-    final orderId = data['orderId']?.toString();
+    // Prefer the human-readable display order id (`order_id`) over the Mongo
+    // `_id` (delivered as `orderId` in the FCM payload).
+    final displayOrderId =
+        (data['order_id'] ?? data['orderId'])?.toString();
 
     return Container(
       decoration: const BoxDecoration(
@@ -64,7 +67,9 @@ class NewOrderRequestView extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      orderId != null ? '#$orderId' : 'Incoming...',
+                      displayOrderId != null
+                          ? '#$displayOrderId'
+                          : 'Incoming...',
                       style: AppTextStyles.textLargefs20(
                         context,
                       ).copyWith(fontWeight: FontWeight.bold, fontSize: 24),

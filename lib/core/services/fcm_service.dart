@@ -43,7 +43,7 @@ class FCMService {
 
       // Local Notification Settings
       const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('ic_notification');
 
       const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings();
@@ -191,7 +191,8 @@ class FCMService {
               channel.id,
               channel.name,
               channelDescription: channel.description,
-              icon: android.smallIcon ?? '@mipmap/ic_launcher',
+              icon: android.smallIcon ?? 'ic_notification',
+              color: const Color(0xFF24C2B0),
               importance: Importance.max,
               priority: Priority.high,
             ),

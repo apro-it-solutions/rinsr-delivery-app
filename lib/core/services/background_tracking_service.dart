@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart' as ph;
 
 import '../constants/constants.dart';
 import '../network/dio_config.dart';
@@ -31,11 +30,6 @@ class BackgroundTrackingService {
   /// Used for the iOS in-process stream; Android posts from the service
   /// isolate with its own client.
   final DriverTrackingService _trackingService;
-
-  /// Upgrading to "Allow all the time" sends the user to Settings on
-  /// Android 11+, so we only ever ask once per install.
-  static const String _kAskedAlwaysPermission =
-      'asked_background_location_permission';
 
   String? _activeOrderId;
   bool _busy = false;
@@ -238,21 +232,11 @@ class BackgroundTrackingService {
       }
     }
 
-    // "Allow all the time" upgrade. While-in-use is already enough for a
-    // foreground service started while the app is visible; always-allow only
-    // improves killed-state restarts, so a denial is not a failure.
-    if (permission == LocationPermission.whileInUse) {
-      final asked =
-          SharedPreferencesService.getBool(_kAskedAlwaysPermission) ?? false;
-      if (!asked) {
-        await SharedPreferencesService.setBool(_kAskedAlwaysPermission, true);
-        try {
-          await ph.Permission.locationAlways.request();
-        } catch (e) {
-          if (kDebugMode) debugPrint('[TRACKING] always-perm request: $e');
-        }
-      }
-    }
+    // While-in-use is sufficient: the foreground service is started while the
+    // app is visible, so it keeps tracking in the background without
+    // ACCESS_BACKGROUND_LOCATION (which we intentionally don't request — it
+    // triggers Play's sensitive-permission review). No "Allow all the time"
+    // upgrade prompt.
     return true;
   }
 }

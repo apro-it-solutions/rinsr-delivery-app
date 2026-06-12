@@ -8,11 +8,12 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- Live driver tracking while en route: a location-type foreground
          service keeps GPS + POSTs alive when the agent backgrounds the app.
-         ACCESS_BACKGROUND_LOCATION additionally lets the sticky service
-         resume after the OS kills and restarts the process. -->
+         Tracking runs on while-in-use location (the FGS is started while the
+         app is visible), so ACCESS_BACKGROUND_LOCATION is intentionally NOT
+         requested — it triggers Play's sensitive-permission review and only
+         buys auto-resume after a process force-kill, which we don't need. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- neverForLocation: this app uses BLE only to read a weight scale, never
@@ -39,6 +40,22 @@
         tools:node="remove" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
         tools:node="remove" />
+    <!-- Permissions above implicitly mark their hardware as required, which
+         drops devices that lack it from Play. None of these are mandatory to
+         run the app (BLE = optional scale read, camera = photos, GPS = best-
+         effort location), so declare them not-required to keep device support. -->
+    <uses-feature android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps"
+        android:required="false" />
     <application
         android:label="Rinsr Delivery"
         android:name="${applicationName}"
@@ -46,6 +63,12 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="high_importance_channel" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -146,8 +146,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 final currentOrder = state is OrderLoaded
                     ? state.order
                     : widget.order;
-                final isSubmitting =
-                    state is OrderLoaded && state.isSubmitting;
+                final isSubmitting = state is OrderLoaded && state.isSubmitting;
                 return Stack(
                   children: [
                     SingleChildScrollView(
@@ -207,9 +206,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ? state.distanceInMeters
             : null;
         final locationError = state is OrderLoaded ? state.locationError : null;
-        final isEnabled = true;
-
-        // distanceInMeters != null && distanceInMeters <= 50;
+        final isEnabled = distanceInMeters != null && distanceInMeters <= 50;
 
         final locationWidget = OrderLocationStatus(
           isLocationLoading: isLocationLoading,

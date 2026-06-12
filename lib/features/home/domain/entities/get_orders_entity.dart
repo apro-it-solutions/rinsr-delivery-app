@@ -138,11 +138,18 @@ class OrderDetailsEntity extends Equatable {
         s == OrderStatus.washing;
   }
 
-  bool get isReturnLegStatus {
+  // Post-washing limbo: the order sits at the hub/vendor (`ready` /
+  // `readyToPickupFromHub`) with the forward-leg agent's id still lingering in
+  // `currentDeliveryPartnerId`. That id alone doesn't mean they're busy — they
+  // haven't accepted the return leg yet, so they're free to take other orders.
+  //
+  // `outForDelivery` is deliberately NOT here: an agent who is out for delivery
+  // is physically driving the order to the customer (forward, return, or a
+  // direct book-now leg that never has an `accepted_for_return` marker), so it
+  // must always count as active.
+  bool get isPostWashingLimbo {
     final s = computedStatus;
-    return s == OrderStatus.ready ||
-        s == OrderStatus.readyToPickupFromHub ||
-        s == OrderStatus.outForDelivery;
+    return s == OrderStatus.ready || s == OrderStatus.readyToPickupFromHub;
   }
 
   // The vendor app moves an order washing → completed → dispatched. The agent
@@ -188,7 +195,7 @@ class OrderDetailsEntity extends Equatable {
   bool isActiveForAgent(String agentId) {
     if (deliveryUpdates?.currentDeliveryPartnerId != agentId) return false;
     if (isTerminalForAgent) return false;
-    if (isReturnLegStatus && !hasAcceptedReturnLeg(agentId)) return false;
+    if (isPostWashingLimbo && !hasAcceptedReturnLeg(agentId)) return false;
     return true;
   }
 
