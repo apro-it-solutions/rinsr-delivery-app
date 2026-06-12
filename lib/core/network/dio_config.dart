@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import 'package:rinsr_delivery_partner/features/auth/presentation/auth_router.dart';
 import '../routing/router.dart';
 
 import '../constants/constants.dart';
+import '../services/background_tracking_service.dart';
 import '../services/shared_preferences_service.dart';
 import '../utils/app_alerts.dart';
 
@@ -14,10 +16,14 @@ class DioConfig {
   /// invisible to the user).
   static const String kSilentErrors = 'silentErrors';
 
+  /// Exposed so the background tracking isolate (which can't reach this Dio
+  /// instance) can build its own client against the same API.
+  static const String baseUrl = 'https://rinsrapi.aproitsolutions.in/api/';
+
   static Dio createDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'https://rinsrapi.aproitsolutions.in/api/',
+        baseUrl: baseUrl,
         connectTimeout: const Duration(minutes: 1),
         receiveTimeout: const Duration(minutes: 1),
         headers: {'Content-Type': 'application/json'},
@@ -43,6 +49,12 @@ class DioConfig {
               error.response?.statusCode == 403) {
             // Only clear auth related data if possible, otherwise clear() is fine but aggressive
             await SharedPreferencesService.clear();
+
+            // Session is gone — stop background driver tracking so its
+            // notification (and stale-token POSTs) don't outlive the login.
+            try {
+              await GetIt.instance<BackgroundTrackingService>().stop();
+            } catch (_) {}
 
             await AppRouter.navigatorKey.currentState?.pushNamedAndRemoveUntil(
               AuthRouter.login,

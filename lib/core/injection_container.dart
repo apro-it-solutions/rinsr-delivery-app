@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:rinsr_delivery_partner/core/services/background_tracking_service.dart';
 import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
 import 'package:rinsr_delivery_partner/core/services/driver_tracking_service.dart';
 import '../features/auth/data/repositories/auth_repositories_impl.dart';
@@ -143,6 +144,12 @@ Future<void> init() async {
     () => DriverTrackingService(sl()),
   );
 
+  // Singleton: holds the live handle to the platform foreground service /
+  // iOS background stream, shared by every OrderBloc instance.
+  sl.registerLazySingleton<BackgroundTrackingService>(
+    () => BackgroundTrackingService(sl()),
+  );
+
   sl.registerFactory(
     () => OrderBloc(
       updateOrder: sl(),
@@ -153,6 +160,7 @@ Future<void> init() async {
       locationService: sl(),
       bluetoothScannerService: sl(),
       trackingService: sl(),
+      backgroundTrackingService: sl(),
     ),
   );
 

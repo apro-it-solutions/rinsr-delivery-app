@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import 'core/injection_container.dart' as di;
 import 'core/routing/router.dart';
+import 'core/services/background_tracking_service.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/location_service.dart';
 import 'core/services/shared_preferences_service.dart';
@@ -16,6 +21,14 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Lock the app to portrait — the delivery flow (forms, camera, weighing) is
+  // designed for upright use and must never rotate to landscape.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  // Must run before any foreground-service interaction (background tracking).
+  FlutterForegroundTask.initCommunicationPort();
   await di.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
@@ -31,6 +44,11 @@ void main() async {
   } catch (e) {
     debugPrint('Error initializing location permissions: $e');
   }
+
+  // Re-attach to a tracking service left running by a previous session
+  // (agent force-killed the app mid-route). Fire-and-forget: must not delay
+  // startup.
+  unawaited(di.sl<BackgroundTrackingService>().adoptRunningService());
 
   runApp(const MyApp());
 }
@@ -64,6 +82,7 @@ class MyApp extends StatelessWidget {
             getPaymentQr: di.sl(),
             locationService: di.sl(),
             trackingService: di.sl(),
+            backgroundTrackingService: di.sl(),
           ),
         ),
       ],

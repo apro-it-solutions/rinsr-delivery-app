@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart'; // For Position type
+import 'package:rinsr_delivery_partner/core/services/background_tracking_service.dart';
 import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
 import 'package:rinsr_delivery_partner/core/services/driver_tracking_service.dart';
 
+import '../../../../core/constants/constants.dart';
 import '../../../../core/services/location_service.dart';
+import '../../../../core/services/shared_preferences_service.dart';
+import '../../../../core/services/tracking_throttle.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../domain/entities/update_order_params.dart';
 import '../../domain/entities/payment_qr_response_entity.dart';
@@ -30,10 +34,10 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   StreamSubscription<BleScanFailure?>? _weightFailureSubscription;
   final BluetoothScannerService bluetoothScannerService;
   final DriverTrackingService trackingService;
-  // Throttle live-tracking POSTs so a fast GPS stream doesn't hammer the
-  // backend — at most one ping every [_trackingInterval].
-  DateTime? _lastTrackingPostAt;
-  static const _trackingInterval = Duration(seconds: 5);
+  final BackgroundTrackingService backgroundTrackingService;
+  // Throttles the foreground-fallback tracking POSTs (same 5s policy the
+  // background isolate applies via its own TrackingThrottle).
+  final TrackingThrottle _trackingThrottle = TrackingThrottle();
 
   OrderBloc({
     required this.updateOrder,
@@ -44,6 +48,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     required this.locationService,
     required this.bluetoothScannerService,
     required this.trackingService,
+    required this.backgroundTrackingService,
   }) : super(OrderInitial()) {
     on<OrderLoadEvent>(_onOrderLoadEvent);
     on<InitLocationEvent>(_onInitLocationEvent);
@@ -68,6 +73,38 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     on<WeightReadingUpdated>(_onWeightReadingUpdated);
     on<WeightScaleErrorEvent>(_onWeightScaleError);
     on<WeightScaleErrorCleared>(_onWeightScaleErrorCleared);
+  }
+
+  @override
+  void onChange(Change<OrderState> change) {
+    super.onChange(change);
+    final next = change.nextState;
+    if (next is OrderLoaded) _syncBackgroundTracking(next.order);
+  }
+
+  /// Keeps background GPS tracking in lockstep with the order's en-route
+  /// status instead of any screen's lifecycle, so it survives screen pops and
+  /// app backgrounding. Runs on every state change — start/stop are
+  /// idempotent and cheap when nothing changed.
+  void _syncBackgroundTracking(OrderDetailsEntity order) {
+    final orderId = order.orderId;
+    if (orderId == null || orderId.isEmpty) return;
+    final String? agentId;
+    try {
+      agentId = SharedPreferencesService.getString(AppConstants.kAgentId);
+    } catch (_) {
+      return; // Prefs not initialized (unit tests).
+    }
+    if (agentId != null && order.isEnRouteForAgent(agentId)) {
+      backgroundTrackingService.start(
+        orderId: orderId,
+        orderLabel: order.displayOrderID != null
+            ? '#RIN-${order.displayOrderID}'
+            : null,
+      );
+    } else if (backgroundTrackingService.activeOrderId == orderId) {
+      backgroundTrackingService.stop();
+    }
   }
 
   void _listenWeightFailures() {
@@ -620,16 +657,16 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   /// no loaded order to attach the ping to. Fire-and-forget (errors swallowed
   /// inside the service) so it never blocks the location pipeline.
   void _postTracking(Position position) {
+    // While the background service is active it owns the tracking POSTs
+    // (and keeps them flowing with the app backgrounded); skip here so the
+    // backend doesn't get double pings. This path remains the fallback when
+    // background tracking is unavailable (permission denied, start failed).
+    if (backgroundTrackingService.isActive) return;
     final current = state;
     final orderId = current is OrderLoaded ? current.order.orderId : null;
     if (orderId == null || orderId.isEmpty) return;
 
-    final now = DateTime.now();
-    if (_lastTrackingPostAt != null &&
-        now.difference(_lastTrackingPostAt!) < _trackingInterval) {
-      return;
-    }
-    _lastTrackingPostAt = now;
+    if (!_trackingThrottle.shouldPost(DateTime.now())) return;
 
     trackingService.sendUpdate(
       orderId: orderId,

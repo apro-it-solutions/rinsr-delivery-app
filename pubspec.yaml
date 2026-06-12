@@ -2,7 +2,7 @@ name: rinsr_delivery_partner
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.0+13
+version: 1.0.0+14
 
 environment:
   sdk: ^3.9.2
@@ -43,6 +43,7 @@ dependencies:
   permission_handler: ^11.3.1
   video_player: ^2.9.2
   qr_flutter: ^4.1.0
+  flutter_foreground_task: ^9.1.0
 
 dev_dependencies:
   flutter_test:

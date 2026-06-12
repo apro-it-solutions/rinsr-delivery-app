@@ -1,0 +1,258 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
+
+import '../constants/constants.dart';
+import '../network/dio_config.dart';
+import 'driver_tracking_service.dart';
+import 'shared_preferences_service.dart';
+import 'tracking_task_handler.dart';
+import 'tracking_throttle.dart';
+
+/// Keeps the driver's live location flowing to the customer's tracking map
+/// while the agent is en route, even with the app backgrounded or the screen
+/// locked.
+///
+/// - **Android:** a location-type foreground service (flutter_foreground_task)
+///   running [TrackingTaskHandler] in its own isolate, with a persistent
+///   notification. Survives process death via the plugin's auto-restart.
+/// - **iOS:** a geolocator background stream in the main isolate
+///   (`UIBackgroundModes: location`); posts through the shared authed Dio.
+///
+/// [start]/[stop] are idempotent and safe to call on every bloc emit — the
+/// OrderBloc syncs them to the order's en-route status.
+class BackgroundTrackingService {
+  BackgroundTrackingService(this._trackingService);
+
+  /// Used for the iOS in-process stream; Android posts from the service
+  /// isolate with its own client.
+  final DriverTrackingService _trackingService;
+
+  /// Upgrading to "Allow all the time" sends the user to Settings on
+  /// Android 11+, so we only ever ask once per install.
+  static const String _kAskedAlwaysPermission =
+      'asked_background_location_permission';
+
+  String? _activeOrderId;
+  bool _busy = false;
+  bool _initialized = false;
+  StreamSubscription<Position>? _iosSubscription;
+  final TrackingThrottle _throttle = TrackingThrottle();
+
+  /// Order currently tracked in the background, or null when idle.
+  String? get activeOrderId => _activeOrderId;
+  bool get isActive => _activeOrderId != null;
+
+  void _ensureInitialized() {
+    if (_initialized) return;
+    _initialized = true;
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'driver_tracking',
+        channelName: 'Live delivery tracking',
+        channelDescription:
+            'Shares your live location with the customer while you are en route.',
+        onlyAlertOnce: true,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: false,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.nothing(),
+        // Revive tracking when the OS kills the process (or the device
+        // reboots) mid-route. The handler self-stops when stop() already
+        // cleared the saved order params.
+        autoRunOnBoot: true,
+        allowAutoRestart: true,
+      ),
+    );
+  }
+
+  /// Re-attaches to a foreground service left running by a previous app
+  /// session (e.g. the agent force-killed the UI mid-delivery and reopened),
+  /// so status syncs can stop it when the order leaves the en-route state.
+  Future<void> adoptRunningService() async {
+    if (!Platform.isAndroid) return;
+    try {
+      if (!await FlutterForegroundTask.isRunningService) return;
+      final savedOrderId = await FlutterForegroundTask.getData<String>(
+        key: TrackingDataKeys.orderId,
+      );
+      if (savedOrderId == null || savedOrderId.isEmpty) {
+        await FlutterForegroundTask.stopService();
+      } else {
+        _activeOrderId = savedOrderId;
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[TRACKING] adoptRunningService failed: $e');
+    }
+  }
+
+  Future<void> start({required String orderId, String? orderLabel}) async {
+    if (_busy || _activeOrderId == orderId) return;
+    _busy = true;
+    try {
+      if (!await _ensurePermissions()) {
+        // Graceful fallback: OrderBloc keeps posting from its in-app GPS
+        // stream while the screen is open (current foreground-only behavior).
+        if (kDebugMode) {
+          debugPrint('[TRACKING] background tracking off: location denied');
+        }
+        return;
+      }
+      final token = SharedPreferencesService.getString(AppConstants.kToken);
+      if (token == null || token.isEmpty) return;
+
+      if (Platform.isAndroid) {
+        await _startAndroid(orderId, orderLabel, token);
+      } else {
+        _startIos(orderId);
+        _activeOrderId = orderId;
+      }
+    } catch (e) {
+      // Tracking is telemetry — never let it disrupt the delivery flow.
+      if (kDebugMode) debugPrint('[TRACKING] background start failed: $e');
+    } finally {
+      _busy = false;
+    }
+  }
+
+  Future<void> _startAndroid(
+    String orderId,
+    String? orderLabel,
+    String token,
+  ) async {
+    _ensureInitialized();
+    await FlutterForegroundTask.saveData(
+      key: TrackingDataKeys.orderId,
+      value: orderId,
+    );
+    await FlutterForegroundTask.saveData(
+      key: TrackingDataKeys.authToken,
+      value: token,
+    );
+    await FlutterForegroundTask.saveData(
+      key: TrackingDataKeys.baseUrl,
+      value: DioConfig.baseUrl,
+    );
+
+    final ServiceRequestResult result;
+    if (await FlutterForegroundTask.isRunningService) {
+      // Already tracking a different order — restart so the handler re-reads
+      // the freshly saved params.
+      result = await FlutterForegroundTask.restartService();
+    } else {
+      result = await FlutterForegroundTask.startService(
+        serviceId: 256,
+        serviceTypes: const [ForegroundServiceTypes.location],
+        notificationTitle: 'Rinsr Delivery',
+        notificationText: orderLabel != null
+            ? 'Sharing live location for order $orderLabel'
+            : 'Sharing live location with the customer',
+        callback: startTrackingCallback,
+      );
+    }
+    if (result is ServiceRequestSuccess) {
+      _activeOrderId = orderId;
+    } else if (kDebugMode) {
+      debugPrint('[TRACKING] foreground service start failed: $result');
+    }
+  }
+
+  /// iOS: no separate service — a background-capable stream in this isolate
+  /// keeps delivering positions while backgrounded (location UIBackgroundMode,
+  /// session started in foreground).
+  void _startIos(String orderId) {
+    _iosSubscription?.cancel();
+    _throttle.reset();
+    _iosSubscription =
+        Geolocator.getPositionStream(
+          locationSettings: AppleSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+            pauseLocationUpdatesAutomatically: false,
+            showBackgroundLocationIndicator: true,
+            allowBackgroundLocationUpdates: true,
+          ),
+        ).listen(
+          (position) {
+            if (!_throttle.shouldPost(DateTime.now())) return;
+            _trackingService.sendUpdate(
+              orderId: orderId,
+              lat: position.latitude,
+              lng: position.longitude,
+              headingDeg: position.heading >= 0 ? position.heading : null,
+              speedKph: position.speed >= 0 ? position.speed * 3.6 : null,
+            );
+          },
+          onError: (Object e) {
+            if (kDebugMode) debugPrint('[TRACKING] iOS stream error: $e');
+          },
+        );
+  }
+
+  Future<void> stop() async {
+    _activeOrderId = null;
+    await _iosSubscription?.cancel();
+    _iosSubscription = null;
+    if (!Platform.isAndroid) return;
+    try {
+      // Clear params first so a sticky restart racing the stop finds nothing
+      // to track and shuts itself down.
+      await FlutterForegroundTask.removeData(key: TrackingDataKeys.orderId);
+      await FlutterForegroundTask.removeData(key: TrackingDataKeys.authToken);
+      if (await FlutterForegroundTask.isRunningService) {
+        await FlutterForegroundTask.stopService();
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[TRACKING] background stop failed: $e');
+    }
+  }
+
+  Future<bool> _ensurePermissions() async {
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return false;
+    }
+
+    // Android 13+: the persistent notification is the user-visible contract
+    // for background location — request, but don't block on denial (the
+    // service still runs, just without a visible notification).
+    if (Platform.isAndroid) {
+      try {
+        final np = await FlutterForegroundTask.checkNotificationPermission();
+        if (np != NotificationPermission.granted) {
+          await FlutterForegroundTask.requestNotificationPermission();
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('[TRACKING] notification perm check: $e');
+      }
+    }
+
+    // "Allow all the time" upgrade. While-in-use is already enough for a
+    // foreground service started while the app is visible; always-allow only
+    // improves killed-state restarts, so a denial is not a failure.
+    if (permission == LocationPermission.whileInUse) {
+      final asked =
+          SharedPreferencesService.getBool(_kAskedAlwaysPermission) ?? false;
+      if (!asked) {
+        await SharedPreferencesService.setBool(_kAskedAlwaysPermission, true);
+        try {
+          await ph.Permission.locationAlways.request();
+        } catch (e) {
+          if (kDebugMode) debugPrint('[TRACKING] always-perm request: $e');
+        }
+      }
+    }
+    return true;
+  }
+}

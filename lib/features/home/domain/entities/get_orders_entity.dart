@@ -192,6 +192,18 @@ class OrderDetailsEntity extends Equatable {
     return true;
   }
 
+  // En route = the agent is physically traveling toward the CUSTOMER, which
+  // is when the customer's live map matters: heading out for the pickup
+  // (scheduled, after accepting) or out for delivery. The hub/vendor shuttle
+  // legs don't feed the customer map, so background GPS stays off for them.
+  bool isEnRouteForAgent(String agentId) {
+    final s = computedStatus;
+    if (s != OrderStatus.scheduled && s != OrderStatus.outForDelivery) {
+      return false;
+    }
+    return isActiveForAgent(agentId);
+  }
+
   int get aggregatePieceCount {
     if (services != null && services!.isNotEmpty) {
       return services!.fold<int>(
