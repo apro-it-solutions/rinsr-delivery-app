@@ -11,7 +11,6 @@ import '../../../home/domain/entities/get_orders_entity.dart';
 import '../bloc/order_bloc.dart';
 import '../pages/barcode_scanner_screen.dart';
 import 'order_info_card.dart';
-import 'order_itemized_list.dart';
 
 class OrderPickupForm extends StatefulWidget {
   final OrderDetailsEntity order;
@@ -127,7 +126,7 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
             content: widget.order.userAddress,
             icon: Icons.location_on,
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, widget.order.userAddress),
+                LauncherUtils.launchMaps(context, widget.order.userAddress, coordinates: widget.order.pickupAddress?.coordinates),
             actionIcon: Icons.map,
           ),
         ],
@@ -399,15 +398,12 @@ class _OrderPickupFormState extends State<OrderPickupForm> {
 
   Widget _buildPieceCountSection(BuildContext context) {
     final expectedPieces = widget.order.aggregatePieceCount;
+    // The itemized clothing list is already shown in OrderSummaryCard directly
+    // above this form (per-piece + scheduled), so it's intentionally not
+    // repeated here — see the duplicate-on-stage-2 fix.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OrderItemizedList(
-          services: widget.order.services,
-          fallbackItems: widget.order.selectedClothingItems,
-          collapsible: true,
-        ),
-        const SizedBox(height: 16),
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(

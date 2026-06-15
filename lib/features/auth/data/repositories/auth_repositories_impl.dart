@@ -23,6 +23,7 @@ class AuthRepositoriesImpl implements AuthRepository {
     required String phoneNumber,
     required Function(String, int?) codeSent,
     required Function(String) verificationFailed,
+    int? forceResendingToken,
   }) async {
     if (!await networkInfo.isConnected) {
       return const Left(NetworkFailure());
@@ -31,6 +32,10 @@ class AuthRepositoriesImpl implements AuthRepository {
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: '+91$phoneNumber',
+        // Passing the token from the previous codeSent callback tells Firebase
+        // to force a *new* SMS; without it a repeat request for the same number
+        // is de-duplicated (no SMS) and quickly trips the abuse throttle.
+        forceResendingToken: forceResendingToken,
         verificationCompleted: (PhoneAuthCredential credential) async {
           // Auto-resolution (Android only) - we can handle this if needed,
           // but usually we wait for the user to input the code or the codeSent callback.

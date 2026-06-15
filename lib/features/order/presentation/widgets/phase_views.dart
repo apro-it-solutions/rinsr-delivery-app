@@ -172,7 +172,7 @@ class _PhaseAViewState extends State<PhaseAView> {
                         );
                       },
                 onActionTap: () =>
-                    LauncherUtils.launchMaps(context, widget.order.userAddress),
+                    LauncherUtils.launchMaps(context, widget.order.userAddress, coordinates: widget.order.pickupAddress?.coordinates),
               ),
               if (_customerCallAttempts >= _cancelCallThreshold) ...[
                 const SizedBox(height: 16),
@@ -255,7 +255,7 @@ class _PhaseAViewState extends State<PhaseAView> {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, widget.order.vendorAddress),
+                LauncherUtils.launchMaps(context, widget.order.vendorAddress, coordinates: widget.order.vendorId?.locationCoordinates),
           ),
         ],
       );
@@ -315,7 +315,7 @@ class PhaseBView extends StatelessWidget {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, order.vendorAddress),
+                LauncherUtils.launchMaps(context, order.vendorAddress, coordinates: order.vendorId?.locationCoordinates),
           ),
         ],
       );
@@ -359,7 +359,7 @@ class PhaseBView extends StatelessWidget {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, order.vendorAddress),
+                LauncherUtils.launchMaps(context, order.vendorAddress, coordinates: order.vendorId?.locationCoordinates),
           ),
         ],
       );
@@ -433,7 +433,7 @@ class PhaseCView extends StatelessWidget {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, order.vendorAddress),
+                LauncherUtils.launchMaps(context, order.vendorAddress, coordinates: order.vendorId?.locationCoordinates),
           ),
         ],
       );
@@ -464,7 +464,7 @@ class PhaseCView extends StatelessWidget {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, order.vendorAddress),
+                LauncherUtils.launchMaps(context, order.vendorAddress, coordinates: order.vendorId?.locationCoordinates),
           ),
         ],
       );
@@ -578,7 +578,7 @@ class _PhaseDViewState extends State<PhaseDView> {
                     );
                   },
             onActionTap: () =>
-                LauncherUtils.launchMaps(context, widget.order.vendorAddress),
+                LauncherUtils.launchMaps(context, widget.order.vendorAddress, coordinates: widget.order.vendorId?.locationCoordinates),
           ),
         ],
       );
@@ -644,7 +644,7 @@ class _PhaseDViewState extends State<PhaseDView> {
                       );
                     },
               onActionTap: () =>
-                  LauncherUtils.launchMaps(context, widget.order.userAddress),
+                  LauncherUtils.launchMaps(context, widget.order.userAddress, coordinates: widget.order.pickupAddress?.coordinates),
             ),
           ],
         );

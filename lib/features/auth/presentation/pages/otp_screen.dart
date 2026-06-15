@@ -105,7 +105,10 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     SizedBox(height: 40.h(context)),
                     PinCodeTextField(
-                      enabled: timerValue > 0,
+                      // Always typeable — only the Resend button is gated by the
+                      // countdown. Disabling input at timer 0 trapped users whose
+                      // SMS arrived just after the timer expired.
+                      enabled: true,
                       autoDisposeControllers: false,
                       appContext: context,
                       length: 6,

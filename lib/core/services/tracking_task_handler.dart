@@ -6,6 +6,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'driver_tracking_service.dart';
+import 'tracking_position_filter.dart';
 import 'tracking_throttle.dart';
 
 /// Keys for handing tracking parameters across the isolate boundary via
@@ -36,6 +37,7 @@ class TrackingTaskHandler extends TaskHandler {
   DriverTrackingService? _trackingService;
   String? _orderId;
   final TrackingThrottle _throttle = TrackingThrottle();
+  final TrackingPositionFilter _filter = TrackingPositionFilter();
 
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
@@ -89,7 +91,11 @@ class TrackingTaskHandler extends TaskHandler {
   void _onPosition(Position position) {
     final orderId = _orderId;
     if (orderId == null) return;
-    if (!_throttle.shouldPost(DateTime.now())) return;
+    final now = DateTime.now();
+    // Evaluate quality on every fix (keeps the filter's reference point fresh),
+    // then throttle the cadence of whatever survives.
+    if (!_filter.accept(position, now)) return;
+    if (!_throttle.shouldPost(now)) return;
     // Fire-and-forget: DriverTrackingService swallows network errors.
     _trackingService?.sendUpdate(
       orderId: orderId,

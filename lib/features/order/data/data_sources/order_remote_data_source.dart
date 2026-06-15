@@ -8,6 +8,7 @@ import '../models/cancel_order_response_model.dart';
 import '../models/payment_qr_response_model.dart';
 import '../../../../core/constants/api_urls.dart';
 import '../../../../core/services/shared_preferences_service.dart';
+import '../../../../core/utils/image_compressor.dart';
 import '../models/update_order_model/update_order_model.dart';
 
 abstract class OrderRemoteDataSource {
@@ -40,11 +41,13 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
     dynamic data;
 
     if (photoPath != null) {
+      // Backend rejects images over 5 MB — re-encode under the cap first.
+      final uploadPath = await ImageCompressor.compressForUpload(photoPath);
       if (kDebugMode) {
         print(
           {
             'status': status,
-            'image': photoPath,
+            'image': uploadPath,
             if (weight != null) 'weight': weight,
             if (barcode != null) 'barcode': barcode,
           }.toString(),
@@ -55,7 +58,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
           AppConstants.kAgentId,
         ),
         'status': status,
-        'image': await MultipartFile.fromFile(photoPath),
+        'image': await MultipartFile.fromFile(uploadPath),
         if (weight != null) 'total_weight_kg': weight,
         if (barcode != null) 'barcode_id': barcode,
       });

@@ -67,12 +67,22 @@ class AuthCodeSentEvent extends AuthEvent {
   final int? resendToken;
   final String phoneNumber;
 
+  /// True when this code was sent via "Resend" (the OTP screen is already on
+  /// screen), so the bloc must not re-emit the navigate-to-OTP state.
+  final bool isResend;
+
   const AuthCodeSentEvent({
     required this.verificationId,
     this.resendToken,
     required this.phoneNumber,
+    this.isResend = false,
   });
 
   @override
-  List<Object> get props => [verificationId, resendToken ?? 0, phoneNumber];
+  List<Object> get props => [
+    verificationId,
+    resendToken ?? 0,
+    phoneNumber,
+    isResend,
+  ];
 }

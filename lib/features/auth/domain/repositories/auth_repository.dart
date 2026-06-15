@@ -10,6 +10,7 @@ abstract class AuthRepository {
     required String phoneNumber,
     required Function(String, int?) codeSent,
     required Function(String) verificationFailed,
+    int? forceResendingToken,
   });
 
   Future<Either<Failure, UserCredential>> verifyPhoneOtp({

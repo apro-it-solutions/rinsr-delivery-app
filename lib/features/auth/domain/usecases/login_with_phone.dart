@@ -11,11 +11,13 @@ class LoginWithPhone {
     required String phoneNumber,
     required Function(String, int?) codeSent,
     required Function(String) verificationFailed,
+    int? forceResendingToken,
   }) async {
     return await repository.loginWithPhone(
       phoneNumber: phoneNumber,
       codeSent: codeSent,
       verificationFailed: verificationFailed,
+      forceResendingToken: forceResendingToken,
     );
   }
 }

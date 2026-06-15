@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/constants/api_urls.dart';
+import '../../../../core/utils/image_compressor.dart';
 
 import '../models/get_agent_model/get_agent_model.dart';
 import '../models/ratings_model.dart';
@@ -44,8 +45,10 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<UpdateProfileImageModel> updateProfileImage({
     required String filePath,
   }) async {
+    // Backend rejects images over 5 MB — re-encode under the cap first.
+    final uploadPath = await ImageCompressor.compressForUpload(filePath);
     final formData = FormData.fromMap({
-      'photo': await MultipartFile.fromFile(filePath),
+      'photo': await MultipartFile.fromFile(uploadPath),
     });
     final Response response = await dio.post(
       ApiUrls.updateProfileImage,

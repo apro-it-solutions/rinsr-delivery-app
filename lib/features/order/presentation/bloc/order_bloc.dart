@@ -10,6 +10,7 @@ import 'package:rinsr_delivery_partner/core/services/driver_tracking_service.dar
 import '../../../../core/constants/constants.dart';
 import '../../../../core/services/location_service.dart';
 import '../../../../core/services/shared_preferences_service.dart';
+import '../../../../core/services/tracking_position_filter.dart';
 import '../../../../core/services/tracking_throttle.dart';
 import '../../../home/domain/entities/get_orders_entity.dart';
 import '../../domain/entities/update_order_params.dart';
@@ -38,6 +39,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
   // Throttles the foreground-fallback tracking POSTs (same 5s policy the
   // background isolate applies via its own TrackingThrottle).
   final TrackingThrottle _trackingThrottle = TrackingThrottle();
+  final TrackingPositionFilter _trackingFilter = TrackingPositionFilter();
 
   OrderBloc({
     required this.updateOrder,
@@ -666,7 +668,9 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     final orderId = current is OrderLoaded ? current.order.orderId : null;
     if (orderId == null || orderId.isEmpty) return;
 
-    if (!_trackingThrottle.shouldPost(DateTime.now())) return;
+    final now = DateTime.now();
+    if (!_trackingFilter.accept(position, now)) return;
+    if (!_trackingThrottle.shouldPost(now)) return;
 
     trackingService.sendUpdate(
       orderId: orderId,

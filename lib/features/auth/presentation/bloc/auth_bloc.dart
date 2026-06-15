@@ -17,6 +17,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthExternalServices externalServices;
   String? _verificationId;
 
+  /// Firebase's resend token from the latest `codeSent`. Must be fed back into
+  /// the next request so Firebase actually sends a fresh SMS on resend.
+  int? _resendToken;
+
   int _currentTimerValue = _duration;
 
   AuthBloc({
@@ -81,9 +85,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) {
     _verificationId = event.verificationId;
+    _resendToken = event.resendToken;
     _currentTimerValue = _duration;
 
-    emit(NavigateOtpScreenState(phoneNumber: event.phoneNumber));
+    // Only navigate on the first send — the OTP screen is already open on a
+    // resend, so re-navigating would push a duplicate screen onto the stack.
+    if (!event.isResend) {
+      emit(NavigateOtpScreenState(phoneNumber: event.phoneNumber));
+    }
     emit(AuthOtpSent(timerValue: _duration, phoneNumber: event.phoneNumber));
     _startTimer();
   }
@@ -168,12 +177,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     final result = await loginWithPhone(
       phoneNumber: event.phoneNumber,
+      forceResendingToken: _resendToken,
       codeSent: (verificationId, resendToken) {
         add(
           AuthCodeSentEvent(
             verificationId: verificationId,
             resendToken: resendToken,
             phoneNumber: event.phoneNumber,
+            isResend: true,
           ),
         );
       },

@@ -9,6 +9,7 @@ import '../constants/constants.dart';
 import '../network/dio_config.dart';
 import 'driver_tracking_service.dart';
 import 'shared_preferences_service.dart';
+import 'tracking_position_filter.dart';
 import 'tracking_task_handler.dart';
 import 'tracking_throttle.dart';
 
@@ -36,6 +37,7 @@ class BackgroundTrackingService {
   bool _initialized = false;
   StreamSubscription<Position>? _iosSubscription;
   final TrackingThrottle _throttle = TrackingThrottle();
+  final TrackingPositionFilter _filter = TrackingPositionFilter();
 
   /// Order currently tracked in the background, or null when idle.
   String? get activeOrderId => _activeOrderId;
@@ -164,6 +166,7 @@ class BackgroundTrackingService {
   void _startIos(String orderId) {
     _iosSubscription?.cancel();
     _throttle.reset();
+    _filter.reset();
     _iosSubscription =
         Geolocator.getPositionStream(
           locationSettings: AppleSettings(
@@ -175,7 +178,9 @@ class BackgroundTrackingService {
           ),
         ).listen(
           (position) {
-            if (!_throttle.shouldPost(DateTime.now())) return;
+            final now = DateTime.now();
+            if (!_filter.accept(position, now)) return;
+            if (!_throttle.shouldPost(now)) return;
             _trackingService.sendUpdate(
               orderId: orderId,
               lat: position.latitude,
