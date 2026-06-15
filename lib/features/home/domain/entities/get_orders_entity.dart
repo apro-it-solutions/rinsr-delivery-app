@@ -111,7 +111,24 @@ class OrderDetailsEntity extends Equatable {
 
   // Pay On Delivery: the agent collects payment at the doorstep (QR / cash)
   // before Confirm Delivery unlocks (client issues #9 / #21).
-  bool get isPayOnDelivery => paymentMethod == 'pay_on_delivery';
+  //
+  // The backend sends a cash-on-delivery code in `payment_method` (e.g. 'cod' /
+  // 'cash'); prepaid/gateway orders come through as 'online'. Match any common
+  // COD spelling case-insensitively so the QR/cash flow shows for all of them —
+  // an earlier hardcoded 'pay_on_delivery' string never matched the real
+  // payload, so the "Show Payment QR" button never rendered.
+  static const Set<String> _payOnDeliveryMethods = {
+    'cod',
+    'cash',
+    'cash_on_delivery',
+    'cash-on-delivery',
+    'pay_on_delivery',
+    'pay-on-delivery',
+    'pod',
+  };
+
+  bool get isPayOnDelivery =>
+      _payOnDeliveryMethods.contains((paymentMethod ?? '').toLowerCase().trim());
 
   // "Book now" (immediate) vs "later" (scheduled) pickup. Book-now orders have
   // no meaningful pickup slot, so the scheduled-pickup summary is hidden for

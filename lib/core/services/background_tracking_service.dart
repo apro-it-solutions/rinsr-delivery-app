@@ -187,6 +187,7 @@ class BackgroundTrackingService {
               lng: position.longitude,
               headingDeg: position.heading >= 0 ? position.heading : null,
               speedKph: position.speed >= 0 ? position.speed * 3.6 : null,
+              recordedAt: position.timestamp,
             );
           },
           onError: (Object e) {
@@ -221,6 +222,31 @@ class BackgroundTrackingService {
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       return false;
+    }
+
+    // iOS: escalate While-In-Use → Always so location keeps flowing if the OS
+    // suspends the app (there's no background service to revive it like on
+    // Android). iOS only shows the upgrade prompt once, so gate it behind a
+    // once-per-install flag. Non-fatal: if the agent keeps While-In-Use,
+    // UIBackgroundModes:location + the blue indicator still track while
+    // backgrounded, mirroring the Android graceful-fallback behaviour.
+    if (Platform.isIOS && permission == LocationPermission.whileInUse) {
+      final alreadyAsked =
+          SharedPreferencesService.getBool(AppConstants.kAskedAlwaysLocation) ??
+          false;
+      if (!alreadyAsked) {
+        await SharedPreferencesService.setBool(
+          AppConstants.kAskedAlwaysLocation,
+          true,
+        );
+        try {
+          permission = await Geolocator.requestPermission();
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('[TRACKING] iOS always-permission upgrade failed: $e');
+          }
+        }
+      }
     }
 
     // Android 13+: the persistent notification is the user-visible contract

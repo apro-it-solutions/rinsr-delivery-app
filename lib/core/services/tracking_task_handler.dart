@@ -96,13 +96,15 @@ class TrackingTaskHandler extends TaskHandler {
     // then throttle the cadence of whatever survives.
     if (!_filter.accept(position, now)) return;
     if (!_throttle.shouldPost(now)) return;
-    // Fire-and-forget: DriverTrackingService swallows network errors.
+    // Never awaited: DriverTrackingService swallows network errors and queues
+    // failed breadcrumbs for replay on the next successful POST.
     _trackingService?.sendUpdate(
       orderId: orderId,
       lat: position.latitude,
       lng: position.longitude,
       headingDeg: position.heading >= 0 ? position.heading : null,
       speedKph: position.speed >= 0 ? position.speed * 3.6 : null,
+      recordedAt: position.timestamp,
     );
   }
 
