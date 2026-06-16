@@ -216,13 +216,20 @@ class OrderDetailsEntity extends Equatable {
     return true;
   }
 
-  // En route = the agent is physically traveling toward the CUSTOMER, which
-  // is when the customer's live map matters: heading out for the pickup
-  // (scheduled, after accepting) or out for delivery. The hub/vendor shuttle
-  // legs don't feed the customer map, so background GPS stays off for them.
+  // En route = the agent is on a delivery leg whose destination is the
+  // CUSTOMER, which is when the customer's live map matters:
+  //   - scheduled            → heading out for the pickup (after accepting)
+  //   - readyToPickupFromHub → collecting the clean order from the hub to
+  //                            bring it to the customer (same PhaseDView /
+  //                            distance-to-customer as out-for-delivery)
+  //   - outForDelivery       → final hop to the customer
+  // All three render PhaseDView (or the pickup phase) and stream the agent's
+  // position to the customer endpoint, so background GPS must stay on for them.
   bool isEnRouteForAgent(String agentId) {
     final s = computedStatus;
-    if (s != OrderStatus.scheduled && s != OrderStatus.outForDelivery) {
+    if (s != OrderStatus.scheduled &&
+        s != OrderStatus.outForDelivery &&
+        s != OrderStatus.readyToPickupFromHub) {
       return false;
     }
     return isActiveForAgent(agentId);

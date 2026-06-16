@@ -150,6 +150,12 @@ class BackgroundTrackingService {
         notificationText: orderLabel != null
             ? 'Sharing live location for order $orderLabel'
             : 'Sharing live location with the customer',
+        // Small status-bar icon for the persistent notification; without it
+        // Android shows a blank/grey placeholder. Reuses the FCM silhouette
+        // via the meta-data declared in AndroidManifest.xml.
+        notificationIcon: const NotificationIcon(
+          metaDataName: 'com.pravera.flutter_foreground_task.notification_icon',
+        ),
         callback: startTrackingCallback,
       );
     }

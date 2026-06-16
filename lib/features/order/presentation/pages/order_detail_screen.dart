@@ -16,6 +16,7 @@ import '../widgets/order_summary_card.dart';
 import '../widgets/order_status_header.dart';
 import '../widgets/order_location_status.dart';
 import '../widgets/order_cancelled_view.dart';
+import '../widgets/ios_always_location_banner.dart';
 import '../widgets/phase_views.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -187,6 +188,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           const SizedBox(height: 16),
           OrderSummaryCard(order: order),
           const SizedBox(height: 16),
+          IosAlwaysLocationBanner(
+            isEnRoute:
+                deliveryAgentId != null &&
+                order.isEnRouteForAgent(deliveryAgentId!),
+          ),
           if (order.computedStatus == OrderStatus.delivered)
             OrderCompletedView(order: order)
           else

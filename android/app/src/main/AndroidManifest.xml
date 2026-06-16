@@ -69,6 +69,12 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_color" />
+        <!-- Small icon for the background-tracking foreground-service
+             notification (flutter_foreground_task). Reuses the FCM notification
+             silhouette; referenced by NotificationIcon(metaDataName: ...). -->
+        <meta-data
+            android:name="com.pravera.flutter_foreground_task.notification_icon"
+            android:resource="@drawable/ic_notification" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
