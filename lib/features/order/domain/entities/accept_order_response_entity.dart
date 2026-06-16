@@ -41,6 +41,7 @@ class AcceptOrderDetailsEntity extends Equatable {
   final String? status;
   final String? orderType;
   final String? paymentStatus;
+  final String? paymentMethod;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final int? v;
@@ -78,6 +79,7 @@ class AcceptOrderDetailsEntity extends Equatable {
     this.status,
     this.orderType,
     this.paymentStatus,
+    this.paymentMethod,
     this.createdAt,
     this.updatedAt,
     this.v,
@@ -117,6 +119,7 @@ class AcceptOrderDetailsEntity extends Equatable {
     status,
     orderType,
     paymentStatus,
+    paymentMethod,
     createdAt,
     updatedAt,
     v,

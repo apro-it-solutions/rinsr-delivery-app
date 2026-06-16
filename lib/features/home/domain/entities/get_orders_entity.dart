@@ -232,7 +232,16 @@ class OrderDetailsEntity extends Equatable {
         s != OrderStatus.readyToPickupFromHub) {
       return false;
     }
-    return isActiveForAgent(agentId);
+    // Tracking follows the agent's physical movement to the customer, NOT the
+    // accept-gate. Deliberately bypass isActiveForAgent's
+    // `isPostWashingLimbo && !hasAcceptedReturnLeg` guard: on a return leg whose
+    // backend payload lacks the `accepted_for_return` marker, that guard would
+    // silently keep background tracking off (only the foreground stream posts —
+    // "it updates when I reopen the app"). For tracking we only need: this agent
+    // owns the order and it isn't terminal. (isActiveForAgent stays as-is for
+    // the OR_13 accept-gate, which is a separate concern.)
+    return deliveryUpdates?.currentDeliveryPartnerId == agentId &&
+        !isTerminalForAgent;
   }
 
   int get aggregatePieceCount {
@@ -502,6 +511,7 @@ class OrderDetailsEntity extends Equatable {
       status: acceptOrder.status,
       orderType: acceptOrder.orderType,
       paymentStatus: acceptOrder.paymentStatus,
+      paymentMethod: acceptOrder.paymentMethod,
       vendorStatus: acceptOrder.vendorStatus,
       pickupNotificationSent: acceptOrder.pickupNotificationSent,
       createdAt: acceptOrder.createdAt,

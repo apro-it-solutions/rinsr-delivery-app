@@ -345,8 +345,7 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
   }
 
   Future<void> _confirmMarkCashReceived(BuildContext context) async {
-    final amount =
-        widget.order.estimateTotalPrice ?? widget.order.totalPrice ?? 0;
+    final amount = widget.order.totalPrice ?? 0;
     final orderBloc = context.read<OrderBloc>();
     final confirmed = await showDialog<bool>(
       context: context,

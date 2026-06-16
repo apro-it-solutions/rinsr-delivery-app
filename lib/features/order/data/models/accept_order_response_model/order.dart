@@ -78,6 +78,9 @@ class Order extends AcceptOrderDetailsEntity {
   @JsonKey(name: 'payment_status')
   final String? paymentStatus;
   @override
+  @JsonKey(name: 'payment_method')
+  final String? paymentMethod;
+  @override
   @JsonKey(name: 'vendor_status')
   final String? vendorStatus;
   @JsonKey(name: 'pickup_notification_at')
@@ -129,6 +132,7 @@ class Order extends AcceptOrderDetailsEntity {
     this.status,
     this.orderType,
     this.paymentStatus,
+    this.paymentMethod,
     this.vendorStatus,
     this.pickupNotificationAt,
     this.pickupNotificationSent,
@@ -167,6 +171,7 @@ class Order extends AcceptOrderDetailsEntity {
     String? status,
     String? orderType,
     String? paymentStatus,
+    String? paymentMethod,
     String? vendorStatus,
     DateTime? pickupNotificationAt,
     bool? pickupNotificationSent,
@@ -197,6 +202,7 @@ class Order extends AcceptOrderDetailsEntity {
       status: status ?? this.status,
       orderType: orderType ?? this.orderType,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
       vendorStatus: vendorStatus ?? this.vendorStatus,
       pickupNotificationAt: pickupNotificationAt ?? this.pickupNotificationAt,
       pickupNotificationSent:

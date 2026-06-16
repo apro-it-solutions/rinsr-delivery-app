@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart'; // For Position type
 import 'package:rinsr_delivery_partner/core/services/background_tracking_service.dart';
@@ -96,6 +97,18 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       agentId = SharedPreferencesService.getString(AppConstants.kAgentId);
     } catch (_) {
       return; // Prefs not initialized (unit tests).
+    }
+    if (kDebugMode) {
+      debugPrint(
+        '[TRACKING] sync: orderId=$orderId agentId=$agentId '
+        'status=${order.computedStatus} '
+        'currentDP=${order.deliveryUpdates?.currentDeliveryPartnerId} '
+        'postWashingLimbo=${order.isPostWashingLimbo} '
+        'acceptedReturn=${agentId != null && order.hasAcceptedReturnLeg(agentId)} '
+        'isActiveForAgent=${agentId != null && order.isActiveForAgent(agentId)} '
+        'isEnRoute=${agentId != null && order.isEnRouteForAgent(agentId)} '
+        'bgActive=${backgroundTrackingService.activeOrderId}',
+      );
     }
     if (agentId != null && order.isEnRouteForAgent(agentId)) {
       backgroundTrackingService.start(
