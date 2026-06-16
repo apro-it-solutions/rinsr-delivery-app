@@ -43,9 +43,9 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
   void initState() {
     super.initState();
     if (!_isPaid) {
-      if (widget.order.isPayOnDelivery) {
-        context.read<OrderBloc>().add(const LoadPaymentQr());
-      }
+      // Preload the QR for any unpaid order (payment-method gate removed) so the
+      // "Show Payment QR" button opens a ready code.
+      context.read<OrderBloc>().add(const LoadPaymentQr());
       // Poll so the Confirm Delivery gate opens on its own once the customer
       // pays — the agent shouldn't have to keep tapping "Check Payment Status".
       _paymentPollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
@@ -224,10 +224,8 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
         ),
         const SizedBox(height: 32),
         if (widget.order.paymentStatus != 'paid') ...[
-          if (widget.order.isPayOnDelivery) ...[
-            _buildShowQrButton(context),
-            const SizedBox(height: 16),
-          ],
+          _buildShowQrButton(context),
+          const SizedBox(height: 16),
           Center(
             child: TextButton.icon(
               onPressed: _isCheckingPayment ? null : _checkPaymentStatus,
