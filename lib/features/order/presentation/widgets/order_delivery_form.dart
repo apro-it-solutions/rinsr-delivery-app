@@ -304,8 +304,10 @@ class _OrderDeliveryFormState extends State<OrderDeliveryForm> {
   /// page so the customer gets a large, easy-to-scan code. The poll in
   /// [initState] flips the Confirm Delivery gate once paid.
   Widget _buildShowQrButton(BuildContext context) {
-    final amount =
-        widget.order.estimateTotalPrice ?? widget.order.totalPrice ?? 0;
+    // Collect total_price (the actual amount due, e.g. extras on a subscription
+    // order) — not estimateTotalPrice, which overstates it. Mirrors the QR
+    // screen's backend amount and the "Mark Cash Received" amount.
+    final amount = widget.order.totalPrice ?? 0;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(

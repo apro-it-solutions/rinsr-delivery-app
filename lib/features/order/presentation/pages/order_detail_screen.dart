@@ -212,8 +212,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ? state.distanceInMeters
             : null;
         final locationError = state is OrderLoaded ? state.locationError : null;
-        final isEnabled = true;
-        distanceInMeters != null && distanceInMeters <= 50;
+        final isEnabled = distanceInMeters != null && distanceInMeters <= 50;
 
         final locationWidget = OrderLocationStatus(
           isLocationLoading: isLocationLoading,
