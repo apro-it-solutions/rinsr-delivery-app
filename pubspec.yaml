@@ -2,7 +2,7 @@ name: rinsr_delivery_partner
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.0+26
+version: 1.0.2+26
 
 environment:
   sdk: ^3.9.2

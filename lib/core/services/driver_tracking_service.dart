@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/api_urls.dart';
+import '../network/dio_config.dart';
 
 /// Pushes the driver's live position to the backend, which re-broadcasts it to
 /// the customer's tracking map (socket room `order_tracking_<orderId>`).
@@ -73,7 +74,16 @@ class DriverTrackingService {
       while (_pending.isNotEmpty) {
         final point = _pending.first;
         try {
-          await dio.post(ApiUrls.driverTrackingUpdate, data: point);
+          // A breadcrumb is a fire-and-forget background ping; a failed POST is
+          // already queued and replayed here. It must never surface the global
+          // Dio error snackbar — otherwise a flaky/dead tracking endpoint spams
+          // "Please check your internet connection." every throttle tick (5s)
+          // on top of the order screen even though the order loaded fine.
+          await dio.post(
+            ApiUrls.driverTrackingUpdate,
+            data: point,
+            options: Options(extra: {DioConfig.kSilentErrors: true}),
+          );
           _pending.removeFirst();
         } catch (e) {
           if (kDebugMode) {

@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -125,6 +126,21 @@ class FCMService {
     await _saveTokenToBackend(vendorId);
   }
 
+  /// Maps the running OS to the backend's accepted `platform` values
+  /// (`"ios"` / `"android"` / `"web"`). Anything else is omitted so the
+  /// backend records it as `"unknown"` itself.
+  static String? _platformTag() {
+    if (kIsWeb) return 'web';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.android:
+        return 'android';
+      default:
+        return null;
+    }
+  }
+
   static Future<void> _requestPermission() async {
     await _messaging.requestPermission(alert: true, badge: true, sound: true);
   }
@@ -153,9 +169,15 @@ class FCMService {
     // global Dio interceptor must not surface a snackbar on failure.
     for (int i = 0; i < 5; i++) {
       try {
+        final platform = _platformTag();
         await dio.post(
           ApiUrls.saveToken,
-          data: {'device_token': token},
+          data: {
+            'device_token': token,
+            // Optional: lets the backend segment partners by OS. Omitted when
+            // unknown so the backend defaults it to "unknown" on its side.
+            if (platform != null) 'platform': platform,
+          },
           options: Options(extra: const {DioConfig.kSilentErrors: true}),
         );
         debugPrint('✅ Token saved to backend');
