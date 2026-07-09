@@ -14,4 +14,9 @@ class ApiUrls {
       'orders/$orderId/record-cash-payment';
   static String cancelOrder(String orderId) => 'orders/$orderId/cancel';
   static String paymentQr(String orderId) => 'orders/$orderId/payment-qr';
+
+  /// Force-update check (public, no auth). The `app=delivery` discriminator
+  /// scopes the required version to this app so bumping the customer/vendor
+  /// apps never blocks delivery (confirmed backend contract).
+  static const String appVersionCheck = 'app-version/check?app=delivery';
 }

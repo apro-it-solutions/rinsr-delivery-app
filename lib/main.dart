@@ -13,6 +13,8 @@ import 'core/services/fcm_service.dart';
 import 'core/services/location_service.dart';
 import 'core/services/shared_preferences_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/app_version/presentation/bloc/version_bloc.dart';
+import 'features/app_version/presentation/widgets/version_gate.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/home/presentation/bloc/home_bloc.dart';
 import 'features/order/presentation/bloc/order_bloc.dart';
@@ -53,13 +55,44 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  // Held here so the resume lifecycle callback can re-dispatch the check.
+  late final VersionBloc _versionBloc = di.sl<VersionBloc>()
+    ..add(const CheckVersionRequested());
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _versionBloc.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-check the required version whenever the app returns to the foreground.
+    if (state == AppLifecycleState.resumed) {
+      _versionBloc.add(const CheckVersionRequested());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider<VersionBloc>.value(value: _versionBloc),
         BlocProvider(
           create: (context) => ProfileBloc(
             getAgentDetails: di.sl(),
@@ -98,7 +131,7 @@ class MyApp extends StatelessWidget {
             left: false,
             right: false,
             minimum: const EdgeInsets.only(bottom: 10),
-            child: child ?? const SizedBox.shrink(),
+            child: VersionGate(child: child ?? const SizedBox.shrink()),
           );
         },
       ),

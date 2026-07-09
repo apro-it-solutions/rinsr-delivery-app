@@ -4,6 +4,11 @@ import 'package:get_it/get_it.dart';
 import 'package:rinsr_delivery_partner/core/services/background_tracking_service.dart';
 import 'package:rinsr_delivery_partner/core/services/bluetooth_scanner_service.dart';
 import 'package:rinsr_delivery_partner/core/services/driver_tracking_service.dart';
+import '../features/app_version/data/data_sources/app_version_remote_data_source.dart';
+import '../features/app_version/data/repositories/app_version_repository_impl.dart';
+import '../features/app_version/domain/repositories/app_version_repository.dart';
+import '../features/app_version/domain/usecases/check_app_version.dart';
+import '../features/app_version/presentation/bloc/version_bloc.dart';
 import '../features/auth/data/repositories/auth_repositories_impl.dart';
 import '../features/auth/domain/usecases/authenticate_with_backend.dart';
 import '../features/auth/domain/usecases/login_with_phone.dart';
@@ -88,6 +93,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => MarkPaymentReceived(sl()));
   sl.registerLazySingleton(() => CancelOrder(sl()));
   sl.registerLazySingleton(() => GetPaymentQr(sl()));
+  sl.registerLazySingleton(() => CheckAppVersion(sl()));
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(
@@ -106,6 +112,10 @@ Future<void> init() async {
     () => ProfileRepositoryImpl(sl(), sl(), sl()),
   );
 
+  sl.registerLazySingleton<AppVersionRepository>(
+    () => AppVersionRepositoryImpl(sl(), sl(), sl()),
+  );
+
   // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(sl()),
@@ -121,6 +131,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton<ProfileRemoteDataSource>(
     () => ProfileRemoteDataSourceImpl(sl()),
+  );
+
+  sl.registerLazySingleton<AppVersionRemoteDataSource>(
+    () => AppVersionRemoteDataSourceImpl(sl()),
   );
 
   //! BLoCs
@@ -165,4 +179,6 @@ Future<void> init() async {
   );
 
   sl.registerFactory(() => RatingsBloc(getRatings: sl()));
+
+  sl.registerFactory(() => VersionBloc(checkAppVersion: sl()));
 }
