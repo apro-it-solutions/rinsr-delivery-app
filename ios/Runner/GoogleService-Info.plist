@@ -3,23 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>1045594865170-5b966eb7ih14pkmgblj57vamf3cqhocj.apps.googleusercontent.com</string>
+	<string>40124194392-gtrp0ps556gfobkcqucennee3qn46hbr.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.1045594865170-5b966eb7ih14pkmgblj57vamf3cqhocj</string>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>1045594865170-5e3m682p1je7p9unp4piknul4njav2si.apps.googleusercontent.com</string>
+	<string>com.googleusercontent.apps.40124194392-gtrp0ps556gfobkcqucennee3qn46hbr</string>
 	<key>API_KEY</key>
-	<string>AIzaSyAua3KuL571wKjpE2pPZocWB3qI0sGlQ54</string>
+	<string>AIzaSyAnOLe2tUbtCYJ2xVpDyVIe7OMDcYjos38</string>
 	<key>GCM_SENDER_ID</key>
-	<string>1045594865170</string>
+	<string>40124194392</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.rinsr.delivery</string>
 	<key>PROJECT_ID</key>
-	<string>rinsrdev-845c2</string>
+	<string>rinsr-dev</string>
 	<key>STORAGE_BUCKET</key>
-	<string>rinsrdev-845c2.firebasestorage.app</string>
+	<string>rinsr-dev.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1045594865170:ios:3b159ac6d15e16fdbb62cb</string>
+	<string>1:40124194392:ios:6a4b08ee34a17ca9f1742d</string>
 </dict>
 </plist>

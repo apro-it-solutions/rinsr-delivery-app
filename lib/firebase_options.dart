@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCICZZAFJa5w93j6ZBXwReIGyAQjPOencc',
-    appId: '1:1045594865170:android:8f4af4333a96dde7bb62cb',
-    messagingSenderId: '1045594865170',
-    projectId: 'rinsrdev-845c2',
-    storageBucket: 'rinsrdev-845c2.firebasestorage.app',
+    apiKey: 'AIzaSyDrP7Pv7dgdcmRTOTKykHY6-3BYhjYJumc',
+    appId: '1:40124194392:android:e02b876a63cca94cf1742d',
+    messagingSenderId: '40124194392',
+    projectId: 'rinsr-dev',
+    storageBucket: 'rinsr-dev.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAua3KuL571wKjpE2pPZocWB3qI0sGlQ54',
-    appId: '1:1045594865170:ios:3b159ac6d15e16fdbb62cb',
-    messagingSenderId: '1045594865170',
-    projectId: 'rinsrdev-845c2',
-    storageBucket: 'rinsrdev-845c2.firebasestorage.app',
+    apiKey: 'AIzaSyAnOLe2tUbtCYJ2xVpDyVIe7OMDcYjos38',
+    appId: '1:40124194392:ios:6a4b08ee34a17ca9f1742d',
+    messagingSenderId: '40124194392',
+    projectId: 'rinsr-dev',
+    storageBucket: 'rinsr-dev.firebasestorage.app',
+    iosClientId: '40124194392-gtrp0ps556gfobkcqucennee3qn46hbr.apps.googleusercontent.com',
     iosBundleId: 'com.rinsr.delivery',
   );
 }
